@@ -1,12 +1,15 @@
-import logo from "./logo.svg";
-import "./App.css";
-
-import { Auth } from "./components/auth";
+import "../styles/App.css";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { Auth } from "./pages/Auth";
 
 function App() {
   return (
     <div className="App">
-      <Auth />
+      <Router>
+        <Routes>
+          <Route path="/" exact element={<Auth />} />
+        </Routes>
+      </Router>
     </div>
   );
 }

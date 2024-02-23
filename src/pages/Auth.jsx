@@ -22,7 +22,15 @@ export const Auth = () => {
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const results = await signInWithPopup(auth, googleProvider);
+      const authInfo = {
+        userID: results.user.uid,
+        name: results.user.displayName,
+        profilePhoto: results.user.photoURL,
+        isAuth: true,
+      };
+      // might want to change to cookies, currently on local storage
+      localStorage.setItem("auth", JSON.stringify(authInfo));
     } catch (error) {
       console.error(error);
     }
