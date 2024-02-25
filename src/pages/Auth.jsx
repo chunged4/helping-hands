@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, googleProvider } from "../config/firebase.config";
-import {
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  signOut,
-} from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 
 import "../styles/Auth.css";
 
@@ -13,10 +9,15 @@ export const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const navigate = useNavigate();
 
-  const logIn = async () => {
+  const handleLogIn = async () => {
+    if (isLoggingIn) {
+      return;
+    }
+
     if (!email.trim()) {
       setError("Please enter a valid email address.");
       return;
@@ -34,12 +35,15 @@ export const Auth = () => {
     }
 
     try {
+      setIsLoggingIn(true);
       await createUserWithEmailAndPassword(auth, email, password);
       setError(null);
       navigate("/home");
     } catch (error) {
       console.error(error);
       setError("An error occurred while logging in. Please try again.");
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -63,40 +67,38 @@ export const Auth = () => {
     }
   };
 
-  const logOut = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   return (
-    <div className="login-form">
+    <div className="login-page">
       <h1>Log In</h1>
-      <button className="form-element" onClick={signInWithGoogle}>
-        Continue with Google
-      </button>
-      <input
-        className="form-element"
-        placeholder="Email..."
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <input
-        className="form-element"
-        placeholder="Password..."
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button className="form-element" onClick={logIn}>
-        Log In
-      </button>
-      <button className="form-element" onClick={logOut}>
-        Logout
-      </button>
-      {error && <p className="error-message">{error}</p>}
+      <form className="login-form">
+        <button className="form-element" onClick={signInWithGoogle}>
+          Continue with Google
+        </button>
+        <input
+          className="form-element"
+          placeholder="Email:"
+          autoComplete="email"
+          type="email"
+          required
+          aria-invalid="true"
+          aria-errormessage="email-error"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          className="form-element"
+          placeholder="Password:"
+          autoComplete="current-password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <button className="form-element" onClick={handleLogIn}>
+          Log In
+        </button>
+
+        {error && <p className="error-message">{error}</p>}
+      </form>
     </div>
   );
 };
