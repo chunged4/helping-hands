@@ -4,10 +4,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { auth, googleProvider } from "../config/firebase.config";
 import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 
+import GoogleButton from "react-google-button";
 // import { UserAuthContextProvider } from "../context/UserAuthContext";
 
-import "../styles/Auth.css";
-import GoogleButton from "react-google-button";
+import "../styles/SignUp.css";
 
 export const SignUp = () => {
     const [email, setEmail] = useState("");
