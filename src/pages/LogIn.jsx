@@ -23,7 +23,7 @@ export const LogIn = () => {
   const handleLogIn = async () => {
     if (isLoggingIn) {
       return;
-    }
+	}	
 
     if (!email.trim()) {
       setError("Please enter a valid email address.");
@@ -83,6 +83,7 @@ export const LogIn = () => {
     <div className="login-page">
       <form className="login-form">
         <h1>Log In</h1>
+
         <section>
           <label for="email">Email</label>
           <input
@@ -99,6 +100,7 @@ export const LogIn = () => {
             onChange={(e) => setEmail(e.target.value)}
           />
         </section>
+
         <section>
           <label for="current-password">Password</label>
           <input
@@ -126,11 +128,13 @@ export const LogIn = () => {
             uppercase letter.
           </div> */}
         </section>
+
         {error && <p className="error-message">{error}</p>}
         <button className="form-element" id="logIn" onClick={handleLogIn}>
           Log In
         </button>
         <hr></hr>
+
         <section>
           <GoogleButton
             className="form-element"
