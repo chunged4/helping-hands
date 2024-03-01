@@ -8,7 +8,7 @@ export const Home = () => {
     const logOut = async () => {
         try {
             await signOut(auth);
-            navigate("/");
+            navigate("/login");
         } catch (error) {
             console.error(error);
         }

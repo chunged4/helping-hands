@@ -6,7 +6,7 @@ import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 
 import GoogleButton from "react-google-button";
 
-import ShowPasswordButton from "../components/ShowPasswordButton";
+import { ShowPasswordButton } from "../components/ShowPasswordButton";
 import "../styles/LogIn.css";
 
 export const LogIn = () => {
@@ -21,7 +21,8 @@ export const LogIn = () => {
 
     const navigate = useNavigate();
 
-    const handleLogIn = async () => {
+    const handleLogIn = async (e) => {
+        e.preventDefault();
         if (isLoggingIn) {
             return;
         }

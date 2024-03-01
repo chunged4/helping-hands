@@ -7,7 +7,7 @@ import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import GoogleButton from "react-google-button";
 // import { UserAuthContextProvider } from "../context/UserAuthContext";
 
-import ShowPasswordButton from "../components/ShowPasswordButton";
+import { ShowPasswordButton } from "../components/ShowPasswordButton";
 import "../styles/SignUp.css";
 
 export const SignUp = () => {
@@ -22,7 +22,8 @@ export const SignUp = () => {
 
     const navigate = useNavigate();
 
-    const handleSignUp = async () => {
+    const handleSignUp = async (e) => {
+        e.preventDefault();
         if (isSigningUp) {
             return;
         }
@@ -87,6 +88,7 @@ export const SignUp = () => {
         <div className="login-page">
             <form className="login-form">
                 <h1>Sign Up</h1>
+
                 <section>
                     <label for="email">Email</label>
                     <input
@@ -103,6 +105,7 @@ export const SignUp = () => {
                         onChange={(e) => setEmail(e.target.value)}
                     />
                 </section>
+
                 <section>
                     <label for="current-password">Password</label>
                     <input
@@ -126,15 +129,17 @@ export const SignUp = () => {
             uppercase letter.
           </div> */}
                 </section>
+
                 {error && <p className="error-message">{error}</p>}
                 <button
                     className="form-element"
                     id="logIn"
                     onClick={handleSignUp}
                 >
-                    Log In
+                    Sign Up
                 </button>
                 <hr></hr>
+
                 <section>
                     <GoogleButton
                         className="form-element"
