@@ -7,21 +7,23 @@ import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import GoogleButton from "react-google-button";
 // import { UserAuthContextProvider } from "../context/UserAuthContext";
 
+import ShowPasswordButton from "../components/ShowPasswordButton";
 import "../styles/SignUp.css";
 
 export const SignUp = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    // makes sure there is only one request after clicking the button
+    const [isSigningUp, setIsSigningUp] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     // const { user, setUser } = useContext(UserAuthContextProvider);
 
     const navigate = useNavigate();
 
-    const handleLogIn = async () => {
-        if (isLoggingIn) {
+    const handleSignUp = async () => {
+        if (isSigningUp) {
             return;
         }
 
@@ -42,15 +44,17 @@ export const SignUp = () => {
         }
 
         try {
-            setIsLoggingIn(true);
+            setIsSigningUp(true);
             await createUserWithEmailAndPassword(auth, email, password);
             setError(null);
             navigate("/home");
         } catch (error) {
             console.error(error);
-            setError("An error occurred while logging in. Please try again.");
+            setError(
+                "An error occurred while signing up your account. Please try again."
+            );
         } finally {
-            setIsLoggingIn(false);
+            setIsSigningUp(false);
         }
     };
 
@@ -111,16 +115,10 @@ export const SignUp = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-                    <button
-                        id="toggle-password"
-                        type="button"
-                        aria-label={`Show ${
-                            showPassword ? "masked" : "plain"
-                        } password`}
-                        onClick={togglePasswordVisibility}
-                    >
-                        Show Password
-                    </button>
+                    <ShowPasswordButton
+                        showPassword={showPassword}
+                        togglePasswordVisibility={togglePasswordVisibility}
+                    />
                     {/* TODO: needs to be in sign up later  */}
                     {/* text is to be changed to live validation */}
                     {/* <div id="password-constraints">
@@ -132,7 +130,7 @@ export const SignUp = () => {
                 <button
                     className="form-element"
                     id="logIn"
-                    onClick={handleLogIn}
+                    onClick={handleSignUp}
                 >
                     Log In
                 </button>
@@ -149,7 +147,7 @@ export const SignUp = () => {
             </form>
             <br></br>
             <div>
-                Already have an account? Log in <Link to="/login">here</Link>
+                Already have an account? <Link to="/login">Log in</Link>
             </div>
         </div>
     );

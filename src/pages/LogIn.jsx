@@ -2,17 +2,18 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { auth, googleProvider } from "../config/firebase.config";
-import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 
 import GoogleButton from "react-google-button";
-// import { UserAuthContextProvider } from "../context/UserAuthContext";
 
+import ShowPasswordButton from "../components/ShowPasswordButton";
 import "../styles/LogIn.css";
 
 export const LogIn = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
+    // makes sure there is only one request after clicking the button
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
@@ -43,7 +44,7 @@ export const LogIn = () => {
 
         try {
             setIsLoggingIn(true);
-            await createUserWithEmailAndPassword(auth, email, password);
+            await signInWithEmailAndPassword(auth, email, password);
             setError(null);
             navigate("/home");
         } catch (error) {
@@ -113,22 +114,10 @@ export const LogIn = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-                    <button
-                        id="toggle-password"
-                        type="button"
-                        aria-label={`Show ${
-                            showPassword ? "masked" : "plain"
-                        } password`}
-                        onClick={togglePasswordVisibility}
-                    >
-                        Show Password
-                    </button>
-                    {/* TODO: needs to be in sign up later  */}
-                    {/* text is to be changed to live validation */}
-                    {/* <div id="password-constraints">
-            Eight or more characters, with at least one&nbsp;lowercase and one
-            uppercase letter.
-          </div> */}
+                    <ShowPasswordButton
+                        showPassword={showPassword}
+                        togglePasswordVisibility={togglePasswordVisibility}
+                    />
                 </section>
 
                 {error && <p className="error-message">{error}</p>}
@@ -153,7 +142,8 @@ export const LogIn = () => {
             </form>
             <br></br>
             <div>
-                Don't have an account? Sign up <Link to="/signup">here</Link>
+                Don't have an account?{" "}
+                <Link to="/signup">Create an Account</Link>
             </div>
         </div>
     );
