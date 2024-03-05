@@ -1,11 +1,13 @@
-.login-page {
+/* Center the sign-up page vertically and horizontally */
+.signup-page {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
 }
 
-.login-form {
+/* Center the sign-up form vertically and horizontally, with a width of 50% */
+.signup-form {
     display: flex;
     flex-direction: column;
     width: 50%;
@@ -13,15 +15,20 @@
     align-items: center;
 }
 
+/* Common styles for form elements */
 .form-element {
     padding: 10px;
-    font-size: 20px;
+    font-size: var(--mobile-font-size); /* Responsive font size */
+    display: flex;
+    align-items: center;
 }
 
+/* Error message style */
 .error-message {
     color: red;
 }
 
+/* Button styles */
 button {
     background-color: #eee;
     border: 1px solid #ccc;
@@ -29,108 +36,109 @@ button {
     color: #444;
     cursor: pointer;
     display: block;
-    font-size: 22px;
-    font-size: var(--mobile-font-size);
+    font-size: var(--mobile-font-size); /* Responsive font size */
     font-weight: 500;
     margin: 3px 0 0 0;
     padding: 10px;
 }
 
+/* Button hover effect */
 button:hover {
     background-color: #ccc;
     color: black;
 }
 
-button#logIn {
-    margin: 0px 0 0 0;
+/* Specific style for the sign-up button */
+button#signUp {
+    margin: 0; /* Reset margin */
 }
 
-button#toggle-password {
+/* Show password button styles */
+#show-password {
     background: none;
     border: none;
     cursor: pointer;
     font-weight: 300;
     padding: 0;
     position: absolute;
-    top: -4px;
-    right: -2px;
+    left: -50%; /* Position to the left of the input field */
+    margin-right: 10px; /* Space between the checkbox and the input field */
 }
 
+/* Form container styles */
 form {
-    margin: 0 auto;
-    max-width: 500px;
+    margin: 0 auto; /* Center the form horizontally */
+    max-width: 500px; /* Limit the maximum width of the form */
 }
 
+/* Heading styles */
 h1 {
     border-bottom: 1px solid #ccc;
-    font-size: 28px;
+    font-size: 28px; /* Responsive font size */
     font-weight: 600;
     margin: 0 0 20px 0;
     padding: 0 0 5px 0;
 }
 
+/* Input field styles */
 input {
     border: 1px solid #ccc;
-    font-size: 22px; /* fallback */
-    font-size: var(--mobile-font-size);
+    font-size: var(--mobile-font-size); /* Responsive font size */
     padding: 15px;
-    width: 90%; /* fallback */
-    width: calc(100% - 30px); /* full width minus padding */
+    width: 90%; /* Responsive width */
 }
 
+/* Invalid input field styles */
 input[type="email"]:not(:focus):invalid,
 input[type="password"]:not(:focus):invalid {
     color: red;
     outline-color: red;
 }
 
+/* Label styles */
 label {
     display: block;
-    font-size: 20px;
-    font-size: var(--mobile-font-size);
+    font-size: var(--mobile-font-size); /* Responsive font size */
     font-weight: 500;
     margin: 0 0 3px 0;
 }
 
+/* Section styles (for spacing between form sections) */
 form section {
-    margin: 0 0 20px 0;
-    position: relative; /* for password toggle positioning */
+    margin-bottom: 20px;
 }
+
+/* Media queries for responsive design */
 
 @media (min-width: 450px) {
     body {
-        margin: 20px 50px;
+        margin: 20px 50px; /* Adjust body margin for larger screens */
     }
 
+    /* Increase font size for buttons, heading, input fields, and labels */
     button {
-        font-size: 14px; /* fallback */
         font-size: var(--desktop-font-size);
     }
 
+    /* Adjust margin for login button */
     button#logIn {
-        margin: 40px 0 0 0;
+        margin-top: 40px;
     }
 
+    /* Increase font size for heading */
     h1 {
-        font-size: 28px;
         font-size: calc(2 * var(--desktop-font-size));
-        font-weight: 500;
-        margin: 0 0 80px 0;
+        margin-bottom: 80px; /* Increase margin for spacing */
     }
 
+    /* Increase font size for input fields */
     input {
-        font-size: 14px; /* fallback */
-        font-size: var(--desktop-font-size);
-    }
-
-    label {
-        font-size: 14px; /* fallback */
         font-size: var(--desktop-font-size);
     }
 }
 
 @media (min-width: 800px) {
     body {
-        margin: 50px;
+        margin: 50px; /* Adjust body margin for larger screens */
     }
 }

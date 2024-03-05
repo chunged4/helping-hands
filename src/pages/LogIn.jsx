@@ -6,7 +6,7 @@ import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 
 import GoogleButton from "react-google-button";
 
-import { ShowPasswordButton } from "../components/ShowPasswordButton";
+import { ShowPasswordCheckbox } from "../components/ShowPasswordCheckbox";
 import "../styles/LogIn.css";
 
 export const LogIn = () => {
@@ -87,7 +87,7 @@ export const LogIn = () => {
                 <h1>Log In</h1>
 
                 <section>
-                    <label for="email">Email</label>
+                    <label htmlFor="email">Email</label>
                     <input
                         className="form-element"
                         id="email"
@@ -104,7 +104,7 @@ export const LogIn = () => {
                 </section>
 
                 <section>
-                    <label for="current-password">Password</label>
+                    <label htmlFor="current-password">Password</label>
                     <input
                         className="form-element"
                         id="current-password"
@@ -115,7 +115,7 @@ export const LogIn = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-                    <ShowPasswordButton
+                    <ShowPasswordCheckbox
                         showPassword={showPassword}
                         togglePasswordVisibility={togglePasswordVisibility}
                     />
@@ -140,6 +140,7 @@ export const LogIn = () => {
                         Continue with Google
                     </GoogleButton>
                 </section>
+            
             </form>
             <br></br>
             <div>
