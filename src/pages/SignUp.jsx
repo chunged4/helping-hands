@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import GoogleButton from "react-google-button";
+// import {calendar} from 'react-icons-kit/iconic/calendar'
 
 import { auth, googleProvider } from "../config/firebase.config";
 import {
@@ -8,9 +10,7 @@ import {
     fetchSignInMethodsForEmail,
 } from "firebase/auth";
 
-import GoogleButton from "react-google-button";
-
-import { ShowPasswordCheckbox } from "../components/ShowPasswordCheckbox";
+import { ShowPasswordIconButton } from "../components/ShowPasswordIconButton";
 import { useValidation } from "../hooks/useValidation";
 import "../styles/SignUp.css";
 
@@ -19,13 +19,16 @@ export const SignUp = () => {
         firstName: "",
         lastName: "",
         email: "",
-        password: "",
+        currentPassword: "",
         confirmPassword: "",
     });
     const [error, setError] = useState(null);
     // makes sure there is only one request after clicking the button
     const [isSigningUp, setIsSigningUp] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const [passwordType, setPasswordType] = useState({
+        password: "password",
+        confirmPassword: "password",
+    });
 
     const navigate = useNavigate();
     const { errors, validate } = useValidation();
@@ -90,10 +93,6 @@ export const SignUp = () => {
         }
     };
 
-    const togglePasswordVisibility = () => {
-        setShowPassword((prevShowPassword) => !prevShowPassword);
-    };
-
     return (
         <div className="signup-page">
             <form className="signup-form">
@@ -109,7 +108,6 @@ export const SignUp = () => {
                         autoComplete="firstName"
                         type="text"
                         required
-                        aria-invalid="true"
                         aria-errormessage="firstName-error"
                         value={values.firstName}
                         onChange={handleInput}
@@ -157,20 +155,25 @@ export const SignUp = () => {
                 </section>
 
                 <section>
-                    <label htmlFor="current-password">Password</label>
+                    <label htmlFor="currentPassword">Password</label>
                     <input
                         className="form-element"
-                        id="current-password"
-                        name="current-password"
+                        id="currentPassword"
+                        name="currentPassword"
                         placeholder=" "
                         autoComplete="new-password"
-                        type={showPassword ? "text" : "password"}
+                        type={passwordType.password}
                         value={values.password}
                         onChange={handleInput}
                     />
-                    <ShowPasswordCheckbox
-                        showPassword={showPassword}
-                        togglePasswordVisibility={togglePasswordVisibility}
+                    <ShowPasswordIconButton
+                        passwordType={passwordType.password}
+                        setPasswordType={(newType) =>
+                            setPasswordType({
+                                ...passwordType,
+                                password: newType,
+                            })
+                        }
                     />
                     {errors.password && (
                         <p className="error-message">{errors.password}</p>
@@ -178,16 +181,25 @@ export const SignUp = () => {
                 </section>
 
                 <section>
-                    <label htmlFor="confirm-password">Confirm Password</label>
+                    <label htmlFor="confirmPassword">Confirm Password</label>
                     <input
                         className="form-element"
-                        id="confirm-password"
-                        name="confirm-password"
+                        id="confirmPassword"
+                        name="confirmPassword"
                         placeholder=" "
                         autoComplete="new-password"
-                        type={showPassword ? "text" : "password"}
+                        type={passwordType.confirmPassword}
                         value={values.confirmPassword}
                         onChange={handleInput}
+                    />
+                    <ShowPasswordIconButton
+                        passwordType={passwordType.confirmPassword}
+                        setPasswordType={(newType) =>
+                            setPasswordType({
+                                ...passwordType,
+                                confirmPassword: newType,
+                            })
+                        }
                     />
                     {errors.confirmPassword && (
                         <p className="error-message">

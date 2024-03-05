@@ -99,7 +99,7 @@ input[type="password"]:not(:focus):invalid {
 label {
     display: block;
     font-size: var(--mobile-font-size); /* Responsive font size */
-    font-weight: 500;
+    font-weight: 300;
     margin: 0 0 3px 0;
 }
 
