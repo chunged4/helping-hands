@@ -1,51 +1,61 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import GoogleButton from "react-google-button";
+// import {calendar} from 'react-icons-kit/iconic/calendar'
 
 import { auth, googleProvider } from "../config/firebase.config";
-import { createUserWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import {
+    createUserWithEmailAndPassword,
+    signInWithPopup,
+    fetchSignInMethodsForEmail,
+} from "firebase/auth";
 
-import GoogleButton from "react-google-button";
-// import { UserAuthContextProvider } from "../context/UserAuthContext";
-
-import ShowPasswordButton from "../components/ShowPasswordButton";
+import { ShowPasswordIconButton } from "../components/ShowPasswordIconButton";
+import { useValidation } from "../hooks/useValidation";
 import "../styles/SignUp.css";
 
 export const SignUp = () => {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [values, setValues] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        currentPassword: "",
+        confirmPassword: "",
+    });
     const [error, setError] = useState(null);
     // makes sure there is only one request after clicking the button
     const [isSigningUp, setIsSigningUp] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-
-    // const { user, setUser } = useContext(UserAuthContextProvider);
+    const [passwordType, setPasswordType] = useState({
+        password: "password",
+        confirmPassword: "password",
+    });
 
     const navigate = useNavigate();
+    const { errors, validate } = useValidation();
 
-    const handleSignUp = async () => {
-        if (isSigningUp) {
-            return;
-        }
+    const handleValidation = async (e) => {
+        e.preventDefault();
+        const isValid = validate(values);
 
-        if (!email.trim()) {
-            setError("Please enter a valid email address.");
-            return;
-        }
-
-        if (!email || !password) {
-            setError("Please enter both email and password.");
-            return;
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            setError("Please enter a valid email address.");
+        if (!isValid || isSigningUp) {
             return;
         }
 
         try {
+            const checkEmailExists = await fetchSignInMethodsForEmail(
+                auth,
+                values.email
+            );
+            if (checkEmailExists.length > 0) {
+                setError("Email address already exists.");
+                return;
+            }
             setIsSigningUp(true);
-            await createUserWithEmailAndPassword(auth, email, password);
+            await createUserWithEmailAndPassword(
+                auth,
+                values.email,
+                values.password
+            );
             setError(null);
             navigate("/home");
         } catch (error) {
@@ -56,6 +66,10 @@ export const SignUp = () => {
         } finally {
             setIsSigningUp(false);
         }
+    };
+
+    const handleInput = (e) => {
+        setValues({ ...values, [e.target.name]: e.target.value });
     };
 
     const signInWithGoogle = async (e) => {
@@ -79,16 +93,49 @@ export const SignUp = () => {
         }
     };
 
-    const togglePasswordVisibility = () => {
-        setShowPassword((prevShowPassword) => !prevShowPassword);
-    };
-
     return (
-        <div className="login-page">
-            <form className="login-form">
+        <div className="signup-page">
+            <form className="signup-form">
                 <h1>Sign Up</h1>
+
                 <section>
-                    <label for="email">Email</label>
+                    <label htmlFor="firstName">First Name</label>
+                    <input
+                        className="form-element"
+                        id="firstName"
+                        name="firstName"
+                        placeholder=" "
+                        autoComplete="firstName"
+                        type="text"
+                        required
+                        aria-errormessage="firstName-error"
+                        value={values.firstName}
+                        onChange={handleInput}
+                    />
+                    {errors.firstName && (
+                        <p className="error-message">{errors.firstName}</p>
+                    )}
+                    <label htmlFor="lastName">Last Name</label>
+                    <input
+                        className="form-element"
+                        id="lastName"
+                        name="lastName"
+                        placeholder=" "
+                        autoComplete="lastName"
+                        type="text"
+                        required
+                        aria-invalid="true"
+                        aria-errormessage="lastName-error"
+                        value={values.lastName}
+                        onChange={handleInput}
+                    />
+                    {errors.lastName && (
+                        <p className="error-message">{errors.lastName}</p>
+                    )}
+                </section>
+
+                <section>
+                    <label htmlFor="email">Email</label>
                     <input
                         className="form-element"
                         id="email"
@@ -99,42 +146,77 @@ export const SignUp = () => {
                         required
                         aria-invalid="true"
                         aria-errormessage="email-error"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={values.email}
+                        onChange={handleInput}
                     />
+                    {errors.email && (
+                        <p className="error-message">{errors.email}</p>
+                    )}
                 </section>
+
                 <section>
-                    <label for="current-password">Password</label>
+                    <label htmlFor="currentPassword">Password</label>
                     <input
                         className="form-element"
-                        id="current-password"
-                        name="current-password"
+                        id="currentPassword"
+                        name="currentPassword"
                         placeholder=" "
-                        autoComplete="current-password"
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="new-password"
+                        type={passwordType.password}
+                        value={values.password}
+                        onChange={handleInput}
                     />
-                    <ShowPasswordButton
-                        showPassword={showPassword}
-                        togglePasswordVisibility={togglePasswordVisibility}
+                    <ShowPasswordIconButton
+                        passwordType={passwordType.password}
+                        setPasswordType={(newType) =>
+                            setPasswordType({
+                                ...passwordType,
+                                password: newType,
+                            })
+                        }
                     />
-                    {/* TODO: needs to be in sign up later  */}
-                    {/* text is to be changed to live validation */}
-                    {/* <div id="password-constraints">
-            Eight or more characters, with at least one&nbsp;lowercase and one
-            uppercase letter.
-          </div> */}
+                    {errors.password && (
+                        <p className="error-message">{errors.password}</p>
+                    )}
                 </section>
-                {error && <p className="error-message">{error}</p>}
+
+                <section>
+                    <label htmlFor="confirmPassword">Confirm Password</label>
+                    <input
+                        className="form-element"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder=" "
+                        autoComplete="new-password"
+                        type={passwordType.confirmPassword}
+                        value={values.confirmPassword}
+                        onChange={handleInput}
+                    />
+                    <ShowPasswordIconButton
+                        passwordType={passwordType.confirmPassword}
+                        setPasswordType={(newType) =>
+                            setPasswordType({
+                                ...passwordType,
+                                confirmPassword: newType,
+                            })
+                        }
+                    />
+                    {errors.confirmPassword && (
+                        <p className="error-message">
+                            {errors.confirmPassword}
+                        </p>
+                    )}
+                </section>
+
                 <button
                     className="form-element"
-                    id="logIn"
-                    onClick={handleSignUp}
+                    id="signUp"
+                    onClick={handleValidation}
                 >
-                    Log In
+                    Sign Up
                 </button>
                 <hr></hr>
+
                 <section>
                     <GoogleButton
                         className="form-element"

@@ -6,7 +6,7 @@ import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 
 import GoogleButton from "react-google-button";
 
-import ShowPasswordButton from "../components/ShowPasswordButton";
+import { ShowPasswordIconButton } from "../components/ShowPasswordIconButton";
 import "../styles/LogIn.css";
 
 export const LogIn = () => {
@@ -21,7 +21,8 @@ export const LogIn = () => {
 
     const navigate = useNavigate();
 
-    const handleLogIn = async () => {
+    const handleLogIn = async (e) => {
+        e.preventDefault();
         if (isLoggingIn) {
             return;
         }
@@ -86,7 +87,7 @@ export const LogIn = () => {
                 <h1>Log In</h1>
 
                 <section>
-                    <label for="email">Email</label>
+                    <label htmlFor="email">Email</label>
                     <input
                         className="form-element"
                         id="email"
@@ -103,7 +104,7 @@ export const LogIn = () => {
                 </section>
 
                 <section>
-                    <label for="current-password">Password</label>
+                    <label htmlFor="current-password">Password</label>
                     <input
                         className="form-element"
                         id="current-password"
@@ -114,7 +115,7 @@ export const LogIn = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-                    <ShowPasswordButton
+                    <ShowPasswordIconButton
                         showPassword={showPassword}
                         togglePasswordVisibility={togglePasswordVisibility}
                     />
