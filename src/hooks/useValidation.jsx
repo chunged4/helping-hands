@@ -22,15 +22,12 @@ export const useValidation = () => {
 
         if (!values.password) {
             errors.password = "Please enter a password";
-        }
-        // live validation for multiple requirements here:
-        // 8 characters long
-        // uppercase, lowercase, special characters, numbers
-
-        if (!values.confirmPassword) {
-            errors.confirmPassword = "Please confirm your password";
-        } else if (values.confirmPassword !== values.password) {
-            errors.confirmPassword = "Passwords do not match";
+        } else if (
+            !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{10,}$/.test(
+                values.password
+            )
+        ) {
+            errors.password = "Password requirements not met";
         }
 
         setErrors(errors);

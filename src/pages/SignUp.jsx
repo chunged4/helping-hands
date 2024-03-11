@@ -11,23 +11,29 @@ import {
 } from "firebase/auth";
 
 import { ShowPasswordIconButton } from "../components/ShowPasswordIconButton";
+import { RequirementCheckmark } from "../components/RequirementCheckmark";
 import { useValidation } from "../hooks/useValidation";
 import "../styles/SignUp.css";
 
 export const SignUp = () => {
-    const [values, setValues] = useState({
+    const [info, setInfo] = useState({
         firstName: "",
         lastName: "",
         email: "",
         currentPassword: "",
-        confirmPassword: "",
     });
     const [error, setError] = useState(null);
     // makes sure there is only one request after clicking the button
     const [isSigningUp, setIsSigningUp] = useState(false);
     const [passwordType, setPasswordType] = useState({
         password: "password",
-        confirmPassword: "password",
+    });
+    const [validateType, setValidateType] = useState({
+        lower: false,
+        upper: false,
+        number: false,
+        symbol: false,
+        length: false,
     });
 
     const navigate = useNavigate();
@@ -35,7 +41,7 @@ export const SignUp = () => {
 
     const handleValidation = async (e) => {
         e.preventDefault();
-        const isValid = validate(values);
+        const isValid = validate(info);
 
         if (!isValid || isSigningUp) {
             return;
@@ -44,7 +50,7 @@ export const SignUp = () => {
         try {
             const checkEmailExists = await fetchSignInMethodsForEmail(
                 auth,
-                values.email
+                info.email
             );
             if (checkEmailExists.length > 0) {
                 setError("Email address already exists.");
@@ -53,8 +59,8 @@ export const SignUp = () => {
             setIsSigningUp(true);
             await createUserWithEmailAndPassword(
                 auth,
-                values.email,
-                values.password
+                info.email,
+                info.password
             );
             setError(null);
             navigate("/home");
@@ -69,7 +75,20 @@ export const SignUp = () => {
     };
 
     const handleInput = (e) => {
-        setValues({ ...values, [e.target.name]: e.target.value });
+        setInfo({ ...info, [e.target.name]: e.target.value });
+    };
+
+    const handlePasswordInput = (e) => {
+        const password = e.target.value;
+        setInfo({ ...info, password });
+
+        setValidateType({
+            lower: /(?=.*[a-z])/.test(password),
+            upper: /(?=.*[A-Z])/.test(password),
+            number: /(?=.*\d)/.test(password),
+            symbol: /(?=.*[!@#$%^&*])/.test(password),
+            length: /(?=.{10,})/.test(password),
+        });
     };
 
     const signInWithGoogle = async (e) => {
@@ -109,12 +128,15 @@ export const SignUp = () => {
                         type="text"
                         required
                         aria-errormessage="firstName-error"
-                        value={values.firstName}
+                        value={info.firstName}
                         onChange={handleInput}
                     />
                     {errors.firstName && (
                         <p className="error-message">{errors.firstName}</p>
                     )}
+                </section>
+
+                <section>
                     <label htmlFor="lastName">Last Name</label>
                     <input
                         className="form-element"
@@ -126,7 +148,7 @@ export const SignUp = () => {
                         required
                         aria-invalid="true"
                         aria-errormessage="lastName-error"
-                        value={values.lastName}
+                        value={info.lastName}
                         onChange={handleInput}
                     />
                     {errors.lastName && (
@@ -146,7 +168,7 @@ export const SignUp = () => {
                         required
                         aria-invalid="true"
                         aria-errormessage="email-error"
-                        value={values.email}
+                        value={info.email}
                         onChange={handleInput}
                     />
                     {errors.email && (
@@ -155,16 +177,16 @@ export const SignUp = () => {
                 </section>
 
                 <section>
-                    <label htmlFor="currentPassword">Password</label>
+                    <label htmlFor="password">Password</label>
                     <input
                         className="form-element"
-                        id="currentPassword"
-                        name="currentPassword"
+                        id="password"
+                        name="password"
                         placeholder=" "
                         autoComplete="new-password"
                         type={passwordType.password}
-                        value={values.password}
-                        onChange={handleInput}
+                        value={info.password}
+                        onChange={handlePasswordInput}
                     />
                     <ShowPasswordIconButton
                         passwordType={passwordType.password}
@@ -181,31 +203,40 @@ export const SignUp = () => {
                 </section>
 
                 <section>
-                    <label htmlFor="confirmPassword">Confirm Password</label>
-                    <input
-                        className="form-element"
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        placeholder=" "
-                        autoComplete="new-password"
-                        type={passwordType.confirmPassword}
-                        value={values.confirmPassword}
-                        onChange={handleInput}
-                    />
-                    <ShowPasswordIconButton
-                        passwordType={passwordType.confirmPassword}
-                        setPasswordType={(newType) =>
-                            setPasswordType({
-                                ...passwordType,
-                                confirmPassword: newType,
-                            })
-                        }
-                    />
-                    {errors.confirmPassword && (
-                        <p className="error-message">
-                            {errors.confirmPassword}
-                        </p>
-                    )}
+                    <main className="tracker-box">
+                        <p>Password must contain the following:</p>
+
+                        <div>
+                            <RequirementCheckmark
+                                validateState={validateType.lower}
+                            />
+                            <span>Lowercase letter</span>
+                        </div>
+                        <div>
+                            <RequirementCheckmark
+                                validateState={validateType.upper}
+                            />
+                            Uppercase letter
+                        </div>
+                        <div>
+                            <RequirementCheckmark
+                                validateState={validateType.number}
+                            />
+                            Number
+                        </div>
+                        <div>
+                            <RequirementCheckmark
+                                validateState={validateType.symbol}
+                            />
+                            Symbol
+                        </div>
+                        <div>
+                            <RequirementCheckmark
+                                validateState={validateType.length}
+                            />
+                            10 Characters
+                        </div>
+                    </main>
                 </section>
 
                 <button
