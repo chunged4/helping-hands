@@ -10,16 +10,24 @@ import { ShowPasswordIconButton } from "../components/ShowPasswordIconButton";
 import "../styles/LogIn.css";
 
 export const LogIn = () => {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [info, setInfo] = useState({
+        email: "",
+        password: "",
+    });
     const [error, setError] = useState(null);
     // makes sure there is only one request after clicking the button
     const [isLoggingIn, setIsLoggingIn] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+    const [passwordType, setPasswordType] = useState({
+        password: "password",
+    });
 
     // const { user, setUser } = useContext(UserAuthContextProvider);
 
     const navigate = useNavigate();
+
+    const handleInput = (e) => {
+        setInfo({ ...info, [e.target.name]: e.target.value });
+    };
 
     const handleLogIn = async (e) => {
         e.preventDefault();
@@ -27,25 +35,25 @@ export const LogIn = () => {
             return;
         }
 
-        if (!email.trim()) {
+        if (!info.email.trim()) {
             setError("Please enter a valid email address.");
             return;
         }
 
-        if (!email || !password) {
+        if (!info.email || !info.password) {
             setError("Please enter both email and password.");
             return;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
+        if (!emailRegex.test(info.email)) {
             setError("Please enter a valid email address.");
             return;
         }
 
         try {
             setIsLoggingIn(true);
-            await signInWithEmailAndPassword(auth, email, password);
+            await signInWithEmailAndPassword(auth, info.email, info.password);
             setError(null);
             navigate("/home");
         } catch (error) {
@@ -77,10 +85,6 @@ export const LogIn = () => {
         }
     };
 
-    const togglePasswordVisibility = () => {
-        setShowPassword((prevShowPassword) => !prevShowPassword);
-    };
-
     return (
         <div className="login-page">
             <form className="login-form">
@@ -98,8 +102,8 @@ export const LogIn = () => {
                         required
                         aria-invalid="true"
                         aria-errormessage="email-error"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={info.email}
+                        onChange={handleInput}
                     />
                 </section>
 
@@ -111,13 +115,18 @@ export const LogIn = () => {
                         name="current-password"
                         placeholder=" "
                         autoComplete="current-password"
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        type={passwordType.password}
+                        value={info.password}
+                        onChange={handleInput}
                     />
                     <ShowPasswordIconButton
-                        showPassword={showPassword}
-                        togglePasswordVisibility={togglePasswordVisibility}
+                        passwordType={passwordType.password}
+                        setPasswordType={(newType) =>
+                            setPasswordType({
+                                ...passwordType,
+                                password: newType,
+                            })
+                        }
                     />
                 </section>
 
