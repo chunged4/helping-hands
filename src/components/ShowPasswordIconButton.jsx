@@ -7,11 +7,11 @@ export const ShowPasswordIconButton = ({ passwordType, setPasswordType }) => {
         <div>
             {passwordType === "password" ? (
                 <span onClick={() => setPasswordType("text")}>
-                    <Icon icon={basic_eye} size={18} />
+                    <Icon icon={basic_eye_closed} size={18} />
                 </span>
             ) : (
                 <span onClick={() => setPasswordType("password")}>
-                    <Icon icon={basic_eye_closed} size={18} />
+                    <Icon icon={basic_eye} size={18} />
                 </span>
             )}
         </div>

@@ -8,6 +8,7 @@ import {
     createUserWithEmailAndPassword,
     signInWithPopup,
     fetchSignInMethodsForEmail,
+    sendEmailVerification,
 } from "firebase/auth";
 
 import { ShowPasswordIconButton } from "../components/ShowPasswordIconButton";
@@ -39,6 +40,23 @@ export const SignUp = () => {
     const navigate = useNavigate();
     const { errors, validate } = useValidation();
 
+    const handleInput = (e) => {
+        setInfo({ ...info, [e.target.name]: e.target.value });
+    };
+
+    const handlePasswordInput = (e) => {
+        const password = e.target.value;
+        setInfo({ ...info, password });
+
+        setValidateType({
+            lower: /(?=.*[a-z])/.test(password),
+            upper: /(?=.*[A-Z])/.test(password),
+            number: /(?=.*\d)/.test(password),
+            symbol: /(?=.*[!@#$%^&*])/.test(password),
+            length: /(?=.{10,})/.test(password),
+        });
+    };
+
     const handleValidation = async (e) => {
         e.preventDefault();
         const isValid = validate(info);
@@ -61,9 +79,13 @@ export const SignUp = () => {
                 auth,
                 info.email,
                 info.password
-            );
+            ).then(async (userCredential) => {
+                const user = userCredential.user;
+                await sendEmailVerification(user);
+            });
             setError(null);
-            navigate("/home");
+            // navigate to verify page to prompt user to verify their email
+            navigate("/verify-page", { state: { email: info.email } });
         } catch (error) {
             console.error(error);
             setError(
@@ -72,23 +94,6 @@ export const SignUp = () => {
         } finally {
             setIsSigningUp(false);
         }
-    };
-
-    const handleInput = (e) => {
-        setInfo({ ...info, [e.target.name]: e.target.value });
-    };
-
-    const handlePasswordInput = (e) => {
-        const password = e.target.value;
-        setInfo({ ...info, password });
-
-        setValidateType({
-            lower: /(?=.*[a-z])/.test(password),
-            upper: /(?=.*[A-Z])/.test(password),
-            number: /(?=.*\d)/.test(password),
-            symbol: /(?=.*[!@#$%^&*])/.test(password),
-            length: /(?=.{10,})/.test(password),
-        });
     };
 
     const signInWithGoogle = async (e) => {
@@ -206,7 +211,13 @@ export const SignUp = () => {
                     <main className="tracker-box">
                         <p>Password must contain the following:</p>
 
-                        <div>
+                        <div
+                            className={
+                                validateType.lower
+                                    ? "validated"
+                                    : "not-validated"
+                            }
+                        >
                             <RequirementCheckmark
                                 validateState={validateType.lower}
                             />

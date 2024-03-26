@@ -1,0 +1,8 @@
+.verify-container {
+    display: flex;
+    /* margin: 0 auto; */
+    /* max-width: 500px; */
+    padding: 20px;
+    align-items: 60%;
+    justify-content: center;
+}
