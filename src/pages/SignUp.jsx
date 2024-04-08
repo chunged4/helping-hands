@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GoogleButton from "react-google-button";
 // import {calendar} from 'react-icons-kit/iconic/calendar'
@@ -9,6 +9,7 @@ import {
     signInWithPopup,
     fetchSignInMethodsForEmail,
     sendEmailVerification,
+    updateProfile,
 } from "firebase/auth";
 
 import { ShowPasswordIconButton } from "../components/ShowPasswordIconButton";
@@ -21,7 +22,7 @@ export const SignUp = () => {
         firstName: "",
         lastName: "",
         email: "",
-        currentPassword: "",
+        password: "",
     });
     const [error, setError] = useState(null);
     // makes sure there is only one request after clicking the button
@@ -81,6 +82,11 @@ export const SignUp = () => {
                 info.password
             ).then(async (userCredential) => {
                 const user = userCredential.user;
+                await updateProfile(user, {
+                    displayName: `${info.firstName} ${info.lastName}`,
+                    firstName: info.firstName,
+                    lastName: info.lastName,
+                });
                 await sendEmailVerification(user);
             });
             setError(null);
