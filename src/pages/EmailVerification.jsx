@@ -1,33 +1,22 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { auth } from "../config/firebase.config";
+import { UserAuth } from "../context/AuthContext";
 
 import "../styles/EmailVerification.css";
-import { sendEmailVerification } from "firebase/auth";
 
 export const EmailVerification = () => {
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
+    const { user, sendVerificationEmail } = UserAuth();
     const { email } = location.state || {};
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                try {
-                    const idToken = await user.getIdToken();
-                    if (user.emailVerified && idToken) {
-                        navigate("/home");
-                    } else {
-                        console.log("Email not verified");
-                    }
-                } catch (error) {
-                    console.error("Error getting user token", error);
-                }
-            }
-        });
-        return () => unsubscribe();
-    }, [navigate]);
+        if (user && user.emailVerified) {
+            navigate("/home");
+        }
+    }, [user, navigate]);
 
     if (!email) {
         return (
@@ -38,10 +27,12 @@ export const EmailVerification = () => {
     }
 
     const handleResendVerification = () => {
-        const user = auth.currentUser;
-        sendEmailVerification(user).catch((error) => {
-            console.error("Error sending verification email", error);
-        });
+        try {
+            sendVerificationEmail();
+            setError(null);
+        } catch (error) {
+            setError(error.message);
+        }
     };
 
     return (
@@ -64,6 +55,7 @@ export const EmailVerification = () => {
             <button onClick={handleResendVerification}>
                 Resend Verification Email
             </button>
+            {error && <p className="error-message">{error}</p>}
         </div>
     );
 };

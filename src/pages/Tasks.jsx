@@ -1,5 +1,9 @@
 import React from "react";
 
 export const Tasks = () => {
-    return <div>Tasks</div>;
+    return (
+        <div>
+            <h1>Tasks</h1>
+        </div>
+    );
 };

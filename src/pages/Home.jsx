@@ -1,24 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 
-import { auth } from "../config/firebase.config";
-import { signOut } from "firebase/auth";
+import { UserAuth } from "../context/AuthContext";
 
 export const Home = () => {
-    const [user, setUser] = useState(auth.currentUser);
-
     const navigate = useNavigate();
+    const { user, logOut } = UserAuth();
 
-    useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            setUser(user);
-        });
-        return () => unsubscribe();
-    }, []);
-
-    const logOut = async () => {
+    const handleLogOut = async () => {
         try {
-            await signOut(auth);
+            await logOut();
             navigate("/login");
         } catch (error) {
             console.error(error);
@@ -30,8 +21,8 @@ export const Home = () => {
             <div>
                 {user && user.firstName && <div>Welcome, {user.firstName}</div>}
             </div>
-            <div>Home Page</div>
-            <button onClick={logOut}>Logout</button>
+            <h1>Home</h1>
+            <button onClick={handleLogOut}>Logout</button>
         </div>
     );
 };
