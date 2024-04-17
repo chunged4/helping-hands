@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
-import { Navbar } from "./components/Navbar";
-import { ProtectedRoute } from "./components/ProtectedRoute";
+// import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthContextProvider } from "./context/AuthContext";
 import { LogIn } from "./pages/LogIn";
 import { SignUp } from "./pages/SignUp";
@@ -17,22 +16,18 @@ function App() {
     return (
         <div className="App">
             <AuthContextProvider>
-                <Navbar />
                 <Router>
                     <Routes>
                         <Route path="/login" element={<LogIn />} />
                         <Route path="/signup" element={<SignUp />} />
-                        <ProtectedRoute
+                        <Route
                             path="/verify-page"
                             element={<EmailVerification />}
                         />
-                        <ProtectedRoute path="/home" element={<Home />} />
-                        <ProtectedRoute
-                            path="/calendar"
-                            element={<Calendar />}
-                        />
-                        <ProtectedRoute path="/tasks" element={<Tasks />} />
-                        <ProtectedRoute path="/profile" element={<Profile />} />
+                        <Route path="/home" element={<Home />} />
+                        <Route path="/calendar" element={<Calendar />} />
+                        <Route path="/tasks" element={<Tasks />} />
+                        <Route path="/profile" element={<Profile />} />
                     </Routes>
                 </Router>
             </AuthContextProvider>

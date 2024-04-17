@@ -3,13 +3,14 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 125vh;
+    min-height: 100vh;
 }
 
 .signup-form {
+    width: 90%;
+    max-width: 500px;
     display: flex;
     flex-direction: column;
-    width: 50%;
     justify-content: center;
     align-items: center;
 }
@@ -23,6 +24,7 @@
 
 .error-message {
     color: red;
+    margin-top: 10px;
 }
 
 .tracker-box {
@@ -44,8 +46,8 @@ button {
     display: block;
     font-size: var(--mobile-font-size);
     font-weight: 500;
-    margin: 3px 0 0 0;
-    padding: 10px;
+    margin-top: 10px;
+    padding: 10px 20px;
 }
 
 button:hover {
@@ -69,23 +71,22 @@ button#signUp {
 }
 
 form {
-    margin: 0 auto;
-    max-width: 500px;
+    width: 100%;
 }
 
 h1 {
     border-bottom: 1px solid #ccc;
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 600;
-    margin: 0 0 20px 0;
-    padding: 0 0 5px 0;
+    margin: 20px 0;
+    padding: 10px;
 }
 
 input {
     border: 1px solid #ccc;
     font-size: var(--mobile-font-size);
     padding: 15px;
-    width: 90%;
+    width: 100%;
 }
 
 input[type="email"]:not(:focus):invalid,
@@ -98,7 +99,7 @@ label {
     display: block;
     font-size: var(--mobile-font-size);
     font-weight: 300;
-    margin: 0 0 3px 0;
+    margin-bottom: 5px;
 }
 
 form section {
@@ -106,30 +107,22 @@ form section {
 }
 
 @media (min-width: 450px) {
-    body {
-        margin: 20px 50px;
-    }
-
-    button {
-        font-size: var(--desktop-font-size);
-    }
-
-    button#logIn {
-        margin-top: 40px;
+    .signup-form {
+        width: 70%;
     }
 
     h1 {
-        font-size: calc(2 * var(--desktop-font-size));
-        margin-bottom: 80px; /* Increase margin for spacing */
+        font-size: 28px;
+        margin-bottom: 30px;
     }
 
     input {
-        font-size: var(--desktop-font-size);
+        font-size: 16px;
     }
 }
 
 @media (min-width: 800px) {
-    body {
-        margin: 50px;
+    .signup-form {
+        width: 50%;
     }
 }

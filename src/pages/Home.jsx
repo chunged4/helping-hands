@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
+import { Navbar } from "../components/Navbar";
 import { UserAuth } from "../context/AuthContext";
 
 export const Home = () => {
@@ -18,6 +19,7 @@ export const Home = () => {
 
     return (
         <div>
+            <Navbar />
             <div>
                 {user && user.firstName && <div>Welcome, {user.firstName}</div>}
             </div>

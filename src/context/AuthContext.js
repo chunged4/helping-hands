@@ -16,14 +16,14 @@ import { doc, setDoc } from "firebase/firestore";
 const AuthContext = createContext();
 
 export function AuthContextProvider({ children }) {
-    const [user, setUser] = useState({});
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                setUser(user);
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            if (currentUser) {
+                setUser(currentUser);
             } else {
-                setUser({});
+                setUser(null);
             }
         });
         return () => {
@@ -52,8 +52,10 @@ export function AuthContextProvider({ children }) {
                 firstName: info.firstName,
                 lastName: info.lastName,
             });
-            await setDoc(doc, (db, "users", user.uid), { services: [] });
-            await sendEmailVerification(user);
+            await setDoc(doc(db, "users", info.email), {
+                signedUpServices: [],
+                postedServices: [],
+            });
             setUser(user);
         } catch (error) {
             throw new Error(
@@ -72,9 +74,18 @@ export function AuthContextProvider({ children }) {
             const user = userCredential.user;
             setUser(user);
         } catch (error) {
-            throw new Error(
-                "An error occurred while logging in with email and password. Please try again."
-            );
+            if (
+                error.code === "auth/user-not-found" ||
+                error.code === "auth/wrong-password"
+            ) {
+                throw new Error(
+                    "Incorrect email or password. Please try again."
+                );
+            } else {
+                throw new Error(
+                    "An error occurred while logging in with email and password. Please try again."
+                );
+            }
         }
     }
 
@@ -100,7 +111,7 @@ export function AuthContextProvider({ children }) {
     async function logOut() {
         try {
             await signOut(auth);
-            setUser({});
+            setUser(null);
         } catch (error) {
             throw new Error(
                 "An error occurred while signing out. Please try again."
@@ -110,11 +121,11 @@ export function AuthContextProvider({ children }) {
 
     async function sendVerificationEmail() {
         try {
-            const user = auth.currentUser;
-            await sendEmailVerification(user);
+            await sendEmailVerification(auth.currentUser);
         } catch (error) {
+            console.error(error);
             throw new Error(
-                "An error occurred while sending your verification email. Please try again."
+                "An error occurred while sending the verification email. Please try again."
             );
         }
     }

@@ -89,7 +89,7 @@ export const LogIn = () => {
                     <input
                         className="form-element"
                         id="current-password"
-                        name="current-password"
+                        name="password"
                         placeholder=" "
                         autoComplete="current-password"
                         type={passwordType.password}

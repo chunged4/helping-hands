@@ -18,7 +18,9 @@ export const EmailVerification = () => {
         }
     }, [user, navigate]);
 
-    if (!email) {
+    const userEmail = user ? user.email : email;
+
+    if (!userEmail) {
         return (
             <div className="verify-container">
                 No email found for verification
@@ -26,9 +28,9 @@ export const EmailVerification = () => {
         );
     }
 
-    const handleResendVerification = () => {
+    const handleResendVerification = async () => {
         try {
-            sendVerificationEmail();
+            await sendVerificationEmail();
             setError(null);
         } catch (error) {
             setError(error.message);
