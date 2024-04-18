@@ -92,12 +92,20 @@ export function AuthContextProvider({ children }) {
     async function signInWithGoogle() {
         try {
             const results = await signInWithPopup(auth, googleProvider);
+            const fullName = results.user.displayName;
+            const [firstName, lastName] = fullName.split(" ");
             const authInfo = {
                 userID: results.user.uid,
-                name: results.user.displayName,
+                name: fullName,
+                firstName: firstName,
+                lastName: lastName,
                 profilePhoto: results.user.photoURL,
                 isAuth: true,
             };
+            await setDoc(doc(db, "users", results.user.email), {
+                signedUpServices: [],
+                postedServices: [],
+            });
             // might want to change to cookies, currently on local storage
             localStorage.setItem("user", JSON.stringify(authInfo));
             setUser(results.user);
