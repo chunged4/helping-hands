@@ -15,6 +15,7 @@ export const SignUp = () => {
         lastName: "",
         email: "",
         password: "",
+        accountType: "",
     });
     const [error, setError] = useState(null);
     const [passwordType, setPasswordType] = useState({
@@ -164,6 +165,28 @@ export const SignUp = () => {
                     />
                     {errors.password && (
                         <p className="error-message">{errors.password}</p>
+                    )}
+                </section>
+
+                <section>
+                    <label htmlFor="accountType">Account Type</label>
+                    <select
+                        className="form-element"
+                        id="accountType"
+                        name="accountType"
+                        required
+                        value={info.accountType}
+                        onChange={handleInput}
+                    >
+                        <option value="">Select Account Type</option>
+                        <option value="coordinator">
+                            Volunteer Coordinator
+                        </option>
+                        <option value="volunteer">Volunteer</option>
+                        <option value="member">Member</option>
+                    </select>
+                    {errors.accountType && (
+                        <p className="error-message">{errors.accountType}</p>
                     )}
                 </section>
 

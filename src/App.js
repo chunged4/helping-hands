@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
 // import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthContextProvider } from "./context/AuthContext";
+import { Landing } from "./pages/Landing";
 import { LogIn } from "./pages/LogIn";
 import { SignUp } from "./pages/SignUp";
 import { EmailVerification } from "./pages/EmailVerification";
@@ -18,6 +19,7 @@ function App() {
             <AuthContextProvider>
                 <Router>
                     <Routes>
+                        <Route path="/" element={<Landing />} />
                         <Route path="/login" element={<LogIn />} />
                         <Route path="/signup" element={<SignUp />} />
                         <Route
