@@ -1,16 +1,26 @@
-import React from "react";
-import { useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { auth } from "../config/firebase.config";
+import { UserAuth } from "../context/AuthContext";
 
 import "../styles/EmailVerification.css";
-import { sendEmailVerification } from "firebase/auth";
 
 export const EmailVerification = () => {
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
     const location = useLocation();
+    const { user, sendVerificationEmail } = UserAuth();
     const { email } = location.state || {};
 
-    if (!email) {
+    useEffect(() => {
+        if (user && user.emailVerified) {
+            navigate("/home");
+        }
+    }, [user, navigate]);
+
+    const userEmail = user ? user.email : email;
+
+    if (!userEmail) {
         return (
             <div className="verify-container">
                 No email found for verification
@@ -18,11 +28,13 @@ export const EmailVerification = () => {
         );
     }
 
-    const handleResendVerification = () => {
-        const user = auth.currentUser;
-        sendEmailVerification(user).catch((error) => {
-            console.error("Error sending verification email", error);
-        });
+    const handleResendVerification = async () => {
+        try {
+            await sendVerificationEmail();
+            setError(null);
+        } catch (error) {
+            setError(error.message);
+        }
     };
 
     return (
@@ -30,16 +42,22 @@ export const EmailVerification = () => {
             <h2>Please verify your email</h2>
             <div>
                 A verification link has been sent to {email}. Please click the
-                link in your email to verify your account.
+                link in your email to verify your account and complete your
+                signup.
             </div>
             <div>
-                Click on the link in the email to complete your signup. If you
-                don't see it, you may need to <b>check your spam</b> folder.
+                If you don't see it, this process might take a couple of
+                minutes, or you may need to check your <b>spam</b> folder.
+            </div>
+            <div>
+                If you have verified, but have not yet been redirected, you can
+                click <Link to="/home">here</Link>
             </div>
             <div>Still can't find the email?</div>
             <button onClick={handleResendVerification}>
                 Resend Verification Email
             </button>
+            {error && <p className="error-message">{error}</p>}
         </div>
     );
 };

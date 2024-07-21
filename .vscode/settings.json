@@ -16,12 +16,14 @@
         "titleBar.activeBackground": "#7755dd",
         "titleBar.activeForeground": "#e7e7e7",
         "titleBar.inactiveBackground": "#7755dd99",
-        "titleBar.inactiveForeground": "#e7e7e799"
+        "titleBar.inactiveForeground": "#e7e7e799",
+        "activityBar.activeBorder": "#9f4021"
     },
     "peacock.color": "#7755dd",
     "cSpell.words": [
         "appspot",
         "firebaseapp",
+        "Firestore",
         "linea",
         "noopener",
         "signup",

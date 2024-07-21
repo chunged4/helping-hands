@@ -1,19 +1,12 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GoogleButton from "react-google-button";
-// import {calendar} from 'react-icons-kit/iconic/calendar'
-
-import { auth, googleProvider } from "../config/firebase.config";
-import {
-    createUserWithEmailAndPassword,
-    signInWithPopup,
-    fetchSignInMethodsForEmail,
-    sendEmailVerification,
-} from "firebase/auth";
 
 import { ShowPasswordIconButton } from "../components/ShowPasswordIconButton";
 import { RequirementCheckmark } from "../components/RequirementCheckmark";
+import { UserAuth } from "../context/AuthContext";
 import { useValidation } from "../hooks/useValidation";
+
 import "../styles/SignUp.css";
 
 export const SignUp = () => {
@@ -21,11 +14,10 @@ export const SignUp = () => {
         firstName: "",
         lastName: "",
         email: "",
-        currentPassword: "",
+        password: "",
+        accountType: "",
     });
     const [error, setError] = useState(null);
-    // makes sure there is only one request after clicking the button
-    const [isSigningUp, setIsSigningUp] = useState(false);
     const [passwordType, setPasswordType] = useState({
         password: "password",
     });
@@ -39,6 +31,7 @@ export const SignUp = () => {
 
     const navigate = useNavigate();
     const { errors, validate } = useValidation();
+    const { signUp, signInWithGoogle, sendVerificationEmail } = UserAuth();
 
     const handleInput = (e) => {
         setInfo({ ...info, [e.target.name]: e.target.value });
@@ -57,63 +50,31 @@ export const SignUp = () => {
         });
     };
 
-    const handleValidation = async (e) => {
+    const handleSignUp = async (e) => {
         e.preventDefault();
         const isValid = validate(info);
-
-        if (!isValid || isSigningUp) {
+        if (!isValid) {
             return;
         }
 
         try {
-            const checkEmailExists = await fetchSignInMethodsForEmail(
-                auth,
-                info.email
-            );
-            if (checkEmailExists.length > 0) {
-                setError("Email address already exists.");
-                return;
-            }
-            setIsSigningUp(true);
-            await createUserWithEmailAndPassword(
-                auth,
-                info.email,
-                info.password
-            ).then(async (userCredential) => {
-                const user = userCredential.user;
-                await sendEmailVerification(user);
-            });
+            await signUp(info);
+            await sendVerificationEmail();
             setError(null);
             // navigate to verify page to prompt user to verify their email
             navigate("/verify-page", { state: { email: info.email } });
         } catch (error) {
-            console.error(error);
-            setError(
-                "An error occurred while signing up your account. Please try again."
-            );
-        } finally {
-            setIsSigningUp(false);
+            setError(error.message);
         }
     };
 
-    const signInWithGoogle = async (e) => {
+    const handleGoogleSignIn = async (e) => {
         e.preventDefault();
         try {
-            const results = await signInWithPopup(auth, googleProvider);
-            const authInfo = {
-                userID: results.user.uid,
-                name: results.user.displayName,
-                profilePhoto: results.user.photoURL,
-                isAuth: true,
-            };
-            // might want to change to cookies, currently on local storage
-            localStorage.setItem("user", JSON.stringify(authInfo));
+            await signInWithGoogle();
             navigate("/home");
         } catch (error) {
-            console.error(error);
-            setError(
-                "An error occurred while logging in with Google. Please try again."
-            );
+            setError(error.message);
         }
     };
 
@@ -208,6 +169,28 @@ export const SignUp = () => {
                 </section>
 
                 <section>
+                    <label htmlFor="accountType">Account Type</label>
+                    <select
+                        className="form-element"
+                        id="accountType"
+                        name="accountType"
+                        required
+                        value={info.accountType}
+                        onChange={handleInput}
+                    >
+                        <option value="">Select Account Type</option>
+                        <option value="coordinator">
+                            Volunteer Coordinator
+                        </option>
+                        <option value="volunteer">Volunteer</option>
+                        <option value="member">Member</option>
+                    </select>
+                    {errors.accountType && (
+                        <p className="error-message">{errors.accountType}</p>
+                    )}
+                </section>
+
+                <section>
                     <main className="tracker-box">
                         <p>Password must contain the following:</p>
 
@@ -250,10 +233,11 @@ export const SignUp = () => {
                     </main>
                 </section>
 
+                {error && <p className="error-message">{error}</p>}
                 <button
                     className="form-element"
                     id="signUp"
-                    onClick={handleValidation}
+                    onClick={handleSignUp}
                 >
                     Sign Up
                 </button>
@@ -263,7 +247,7 @@ export const SignUp = () => {
                     <GoogleButton
                         className="form-element"
                         type="dark"
-                        onClick={signInWithGoogle}
+                        onClick={handleGoogleSignIn}
                     >
                         Continue with Google
                     </GoogleButton>

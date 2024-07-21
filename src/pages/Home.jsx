@@ -1,13 +1,16 @@
+import React from "react";
 import { useNavigate } from "react-router-dom";
 
-import { auth } from "../config/firebase.config";
-import { signOut } from "firebase/auth";
+import { Navbar } from "../components/Navbar";
+import { UserAuth } from "../context/AuthContext";
 
 export const Home = () => {
     const navigate = useNavigate();
-    const logOut = async () => {
+    const { user, logOut } = UserAuth();
+
+    const handleLogOut = async () => {
         try {
-            await signOut(auth);
+            await logOut();
             navigate("/login");
         } catch (error) {
             console.error(error);
@@ -16,8 +19,12 @@ export const Home = () => {
 
     return (
         <div>
-            <div>Home Page</div>
-            <button onClick={logOut}>Logout</button>
+            <Navbar />
+            <div>
+                {user && user.firstName && <div>Welcome, {user.firstName}</div>}
+            </div>
+            <h1>Home</h1>
+            <button onClick={handleLogOut}>Logout</button>
         </div>
     );
 };

@@ -1,31 +1,30 @@
-/* Center the sign-up page vertically and horizontally */
 .signup-page {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    min-height: 100vh;
 }
 
-/* Center the sign-up form vertically and horizontally, with a width of 50% */
 .signup-form {
+    width: 90%;
+    max-width: 500px;
     display: flex;
     flex-direction: column;
-    width: 50%;
     justify-content: center;
     align-items: center;
 }
 
-/* Common styles for form elements */
 .form-element {
     padding: 10px;
-    font-size: var(--mobile-font-size); /* Responsive font size */
+    font-size: var(--mobile-font-size);
     display: flex;
     align-items: center;
 }
 
-/* Error message style */
 .error-message {
     color: red;
+    margin-top: 10px;
 }
 
 .tracker-box {
@@ -38,7 +37,6 @@
     padding: 2px;
 }
 
-/* Button styles */
 button {
     background-color: #eee;
     border: 1px solid #ccc;
@@ -46,24 +44,21 @@ button {
     color: #444;
     cursor: pointer;
     display: block;
-    font-size: var(--mobile-font-size); /* Responsive font size */
+    font-size: var(--mobile-font-size);
     font-weight: 500;
-    margin: 3px 0 0 0;
-    padding: 10px;
+    margin-top: 10px;
+    padding: 10px 20px;
 }
 
-/* Button hover effect */
 button:hover {
     background-color: #ccc;
     color: black;
 }
 
-/* Specific style for the sign-up button */
 button#signUp {
-    margin: 0; /* Reset margin */
+    margin: 0;
 }
 
-/* Show password button styles */
 #show-password {
     background: none;
     border: none;
@@ -71,84 +66,63 @@ button#signUp {
     font-weight: 300;
     padding: 0;
     position: absolute;
-    left: -50%; /* Position to the left of the input field */
-    margin-right: 10px; /* Space between the checkbox and the input field */
+    left: -50%;
+    margin-right: 10px;
 }
 
-/* Form container styles */
 form {
-    margin: 0 auto; /* Center the form horizontally */
-    max-width: 500px; /* Limit the maximum width of the form */
+    width: 100%;
 }
 
-/* Heading styles */
 h1 {
     border-bottom: 1px solid #ccc;
-    font-size: 28px; /* Responsive font size */
+    font-size: 24px;
     font-weight: 600;
-    margin: 0 0 20px 0;
-    padding: 0 0 5px 0;
+    margin: 20px 0;
+    padding: 10px;
 }
 
-/* Input field styles */
 input {
     border: 1px solid #ccc;
-    font-size: var(--mobile-font-size); /* Responsive font size */
+    font-size: var(--mobile-font-size);
     padding: 15px;
-    width: 90%; /* Responsive width */
+    width: 100%;
 }
 
-/* Invalid input field styles */
 input[type="email"]:not(:focus):invalid,
 input[type="password"]:not(:focus):invalid {
     color: red;
     outline-color: red;
 }
 
-/* Label styles */
 label {
     display: block;
-    font-size: var(--mobile-font-size); /* Responsive font size */
+    font-size: var(--mobile-font-size);
     font-weight: 300;
-    margin: 0 0 3px 0;
+    margin-bottom: 5px;
 }
 
-/* Section styles (for spacing between form sections) */
 form section {
     margin-bottom: 20px;
 }
 
-/* Media queries for responsive design */
-
 @media (min-width: 450px) {
-    body {
-        margin: 20px 50px; /* Adjust body margin for larger screens */
+    .signup-form {
+        width: 70%;
     }
 
-    /* Increase font size for buttons, heading, input fields, and labels */
-    button {
-        font-size: var(--desktop-font-size);
-    }
-
-    /* Adjust margin for login button */
-    button#logIn {
-        margin-top: 40px;
-    }
-
-    /* Increase font size for heading */
     h1 {
-        font-size: calc(2 * var(--desktop-font-size));
-        margin-bottom: 80px; /* Increase margin for spacing */
+        font-size: 28px;
+        margin-bottom: 30px;
     }
 
-    /* Increase font size for input fields */
     input {
-        font-size: var(--desktop-font-size);
+        font-size: 16px;
     }
 }
 
 @media (min-width: 800px) {
-    body {
-        margin: 50px; /* Adjust body margin for larger screens */
+    .signup-form {
+        width: 50%;
     }
 }
