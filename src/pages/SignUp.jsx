@@ -4,8 +4,12 @@ import GoogleButton from "react-google-button";
 
 import { ShowPasswordIconButton } from "../components/ShowPasswordIconButton";
 import { RequirementCheckmark } from "../components/RequirementCheckmark";
+import { RoleSelectionModal } from "../components/RoleSelectionModal";
 import { UserAuth } from "../context/AuthContext";
 import { useValidation } from "../hooks/useValidation";
+
+import { deleteUser, signOut } from "firebase/auth";
+import { auth } from "../config/firebase.config";
 
 import "../styles/SignUp.css";
 
@@ -28,10 +32,14 @@ export const SignUp = () => {
         symbol: false,
         length: false,
     });
+    const [currentUser, setCurrentUser] = useState(null);
+    const [showRoleSelectModal, setShowRoleSelectModal] = useState(false);
+    const [signUpMethod, setSignUpMethod] = useState(null);
 
     const navigate = useNavigate();
     const { errors, validate } = useValidation();
-    const { signUp, signInWithGoogle, sendVerificationEmail } = UserAuth();
+    const { signUp, signInWithGoogle, sendVerificationEmail, updateUserRole } =
+        UserAuth();
 
     const handleInput = (e) => {
         setInfo({ ...info, [e.target.name]: e.target.value });
@@ -58,11 +66,11 @@ export const SignUp = () => {
         }
 
         try {
-            await signUp(info);
-            await sendVerificationEmail();
+            const user = await signUp(info);
             setError(null);
-            // navigate to verify page to prompt user to verify their email
-            navigate("/verify-page", { state: { email: info.email } });
+            setSignUpMethod("email");
+            setCurrentUser(user);
+            setShowRoleSelectModal(true);
         } catch (error) {
             setError(error.message);
         }
@@ -71,8 +79,45 @@ export const SignUp = () => {
     const handleGoogleSignIn = async (e) => {
         e.preventDefault();
         try {
-            await signInWithGoogle();
-            navigate("/home");
+            const user = await signInWithGoogle();
+            setSignUpMethod("google");
+            setCurrentUser(user);
+            setShowRoleSelectModal(true);
+        } catch (error) {
+            setError(error.message);
+        }
+    };
+
+    const handleModalClose = async () => {
+        setShowRoleSelectModal(false);
+        if (signUpMethod === "email") {
+            try {
+                await deleteUser(auth.currentUser);
+                setError(
+                    "Account creation cancelled. Please try again if you wish to create an account."
+                );
+            } catch (error) {
+                console.error("Error deleting incomplete account: ", error);
+            }
+        }
+        if (signUpMethod === "google") {
+            await signOut(auth);
+            setError(
+                "Signup cancelled. Please try again if you with to create an account."
+            );
+        }
+    };
+
+    const handleRoleSelection = async (selectedRole) => {
+        setShowRoleSelectModal(false);
+        try {
+            await updateUserRole(currentUser, selectedRole);
+            if (signUpMethod === "email") {
+                await sendVerificationEmail();
+                navigate("/verify-page", { state: { email: info.email } });
+            } else if (signUpMethod === "google") {
+                navigate("/home");
+            }
         } catch (error) {
             setError(error.message);
         }
@@ -169,28 +214,6 @@ export const SignUp = () => {
                 </section>
 
                 <section>
-                    <label htmlFor="accountType">Account Type</label>
-                    <select
-                        className="form-element"
-                        id="accountType"
-                        name="accountType"
-                        required
-                        value={info.accountType}
-                        onChange={handleInput}
-                    >
-                        <option value="">Select Account Type</option>
-                        <option value="coordinator">
-                            Volunteer Coordinator
-                        </option>
-                        <option value="volunteer">Volunteer</option>
-                        <option value="member">Member</option>
-                    </select>
-                    {errors.accountType && (
-                        <p className="error-message">{errors.accountType}</p>
-                    )}
-                </section>
-
-                <section>
                     <main className="tracker-box">
                         <p>Password must contain the following:</p>
 
@@ -257,6 +280,12 @@ export const SignUp = () => {
             <div>
                 Already have an account? <Link to="/login">Log in</Link>
             </div>
+            {showRoleSelectModal && (
+                <RoleSelectionModal
+                    onClose={handleModalClose}
+                    onSubmit={handleRoleSelection}
+                />
+            )}
         </div>
     );
 };

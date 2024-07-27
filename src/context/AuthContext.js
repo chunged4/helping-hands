@@ -11,7 +11,7 @@ import {
     onAuthStateChanged,
 } from "firebase/auth";
 import { auth, googleProvider, db } from "../config/firebase.config";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 
 const AuthContext = createContext();
 
@@ -21,7 +21,12 @@ export function AuthContextProvider({ children }) {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
-                setUser(currentUser);
+                console.log(currentUser);
+                const userDoc = await getDoc(
+                    doc(db, "users", currentUser.email)
+                );
+                const userData = userDoc.data();
+                setUser({ ...currentUser, role: userData.role });
             } else {
                 setUser(null);
             }
@@ -49,14 +54,15 @@ export function AuthContextProvider({ children }) {
             const user = userCredential.user;
             await updateProfile(user, {
                 displayName: `${info.firstName} ${info.lastName}`,
-                firstName: info.firstName,
-                lastName: info.lastName,
             });
             await setDoc(doc(db, "users", info.email), {
+                firstName: info.firstName,
+                lastName: info.lastName,
                 signedUpServices: [],
                 postedServices: [],
+                notifications: [],
             });
-            setUser(user);
+            return user;
         } catch (error) {
             throw new Error(
                 "An error occurred while signing up your account. Please try again."
@@ -72,7 +78,9 @@ export function AuthContextProvider({ children }) {
                 info.password
             );
             const user = userCredential.user;
-            setUser(user);
+            const userDoc = await getDoc(doc(db, "users", user.email));
+            const userData = userDoc.data();
+            setUser({ ...user, role: userData.role });
         } catch (error) {
             if (
                 error.code === "auth/user-not-found" ||
@@ -94,21 +102,22 @@ export function AuthContextProvider({ children }) {
             const results = await signInWithPopup(auth, googleProvider);
             const fullName = results.user.displayName;
             const [firstName, lastName] = fullName.split(" ");
-            const authInfo = {
-                userID: results.user.uid,
-                name: fullName,
-                firstName: firstName,
-                lastName: lastName,
-                profilePhoto: results.user.photoURL,
-                isAuth: true,
-            };
-            await setDoc(doc(db, "users", results.user.email), {
-                signedUpServices: [],
-                postedServices: [],
-            });
-            // might want to change to cookies, currently on local storage
-            localStorage.setItem("user", JSON.stringify(authInfo));
-            setUser(results.user);
+            const userDoc = await getDoc(doc(db, "users", results.user.email));
+
+            if (!userDoc.exists()) {
+                await setDoc(doc(db, "users", results.user.email), {
+                    firstName,
+                    lastName,
+                    signedUpServices: [],
+                    postedServices: [],
+                    notifications: [],
+                });
+                return results.user;
+            } else {
+                const userData = userDoc.data();
+                setUser({ ...results.user, role: userData.role });
+                return null;
+            }
         } catch (error) {
             throw new Error(
                 "An error occurred while logging in with Google. Please try again."
@@ -138,6 +147,47 @@ export function AuthContextProvider({ children }) {
         }
     }
 
+    async function updateUserProfile(updates) {
+        try {
+            const user = auth.currentUser;
+            await updateProfile(user, updates);
+            await updateDoc(doc(db, "users", user.email), updates);
+            setUser((prevUser) => ({ ...prevUser, ...updates }));
+        } catch (error) {
+            throw new Error(
+                "An error occurred while updating your profile. Please try again."
+            );
+        }
+    }
+
+    async function addNotification(notification) {
+        try {
+            const user = auth.currentUser;
+            await updateDoc(doc(db, "users", user.email), {
+                notifications: arrayUnion(notification),
+            });
+        } catch (error) {
+            throw new Error(
+                "An error occurred while adding the notification. Please try again."
+            );
+        }
+    }
+
+    async function updateUserRole(user, role) {
+        try {
+            await updateDoc(doc(db, "users", user.email), { role });
+            setUser({ ...user, role });
+        } catch (error) {
+            throw new Error(
+                "An error occurred while updating your role. Please try again."
+            );
+        }
+    }
+
+    function isEmailVerified() {
+        return auth.currentUser?.emailVerified ?? false;
+    }
+
     return (
         <AuthContext.Provider
             value={{
@@ -147,6 +197,10 @@ export function AuthContextProvider({ children }) {
                 signInWithGoogle,
                 logOut,
                 sendVerificationEmail,
+                updateUserProfile,
+                addNotification,
+                isEmailVerified,
+                updateUserRole,
             }}
         >
             {children}

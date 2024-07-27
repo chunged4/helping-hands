@@ -1,19 +1,18 @@
 import React from "react";
-import { Route, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
 import { UserAuth } from "../context/AuthContext";
 
-export const ProtectedRoute = ({ element, ...rest }) => {
-    const { user, loading } = UserAuth();
+export const ProtectedRoute = ({ children, allowedRoles }) => {
+    const { user } = UserAuth();
 
-    if (loading) {
-        // Handle loading state (optional)
-        return <div>Loading...</div>;
+    if (!user) {
+        return <Navigate to="/" />;
     }
 
-    return user ? (
-        <Route {...rest} element={element} />
-    ) : (
-        <Navigate to="/login" state={{ from: rest.location.pathname }} />
-    );
+    if (allowedRoles && !allowedRoles.includes(user.role)) {
+        return <Navigate to="/home" />;
+    }
+
+    return children;
 };

@@ -2,20 +2,25 @@ import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
 const firebaseConfig = {
-    apiKey: "AIzaSyDAsHSsWozr0_cmW8whKmOHUmzxcuGYmVU",
-    authDomain: "helping-hands-b2698.firebaseapp.com",
-    projectId: "helping-hands-b2698",
-    storageBucket: "helping-hands-b2698.appspot.com",
-    messagingSenderId: "31366880727",
-    appId: "1:31366880727:web:bce6d2786bc764dbe33f92",
-    measurementId: "G-XLVXR6ZMB5",
+    apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.REACT_APP_FIREBASE_APP_ID,
+    measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
-const app = getApps.length > 0 ? getApp() : initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+let firebaseApp;
+
+try {
+    firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+} catch (error) {
+    console.error("Error initializing Firebase:", error);
+}
+
+export const auth = getAuth(firebaseApp);
 export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
+export const db = getFirestore(firebaseApp);
+export { firebaseApp };

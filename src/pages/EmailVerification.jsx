@@ -39,7 +39,7 @@ export const EmailVerification = () => {
 
     return (
         <div className="verify-container">
-            <h2>Please verify your email</h2>
+            <h1>One Last Step!</h1>
             <div>
                 A verification link has been sent to {email}. Please click the
                 link in your email to verify your account and complete your
