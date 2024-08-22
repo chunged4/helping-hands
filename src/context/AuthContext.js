@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
 
 import {
     signInWithEmailAndPassword,
@@ -14,27 +20,78 @@ import { auth, googleProvider, db } from "../config/firebase.config";
 import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 
 const AuthContext = createContext();
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+const TOKEN_EXPIRATION = 3 * 60 * 60 * 1000;
 
 export function AuthContextProvider({ children }) {
     const [user, setUser] = useState(null);
+    const [lastActivity, setLastActivity] = useState(Date.now());
+
+    const logOut = useCallback(async () => {
+        try {
+            await signOut(auth);
+            setUser(null);
+            localStorage.removeItem("authUser");
+        } catch (error) {
+            throw new Error(
+                "An error occurred while logging out. Please try again."
+            );
+        }
+    }, []);
+
+    const checkAuthState = useCallback(() => {
+        const storedUser = JSON.parse(localStorage.getItem("authUser"));
+        if (storedUser && new Date().getTime() < storedUser.expirationTime) {
+            setUser(storedUser.user);
+        }
+    }, []);
 
     useEffect(() => {
+        checkAuthState();
+
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
-                console.log(currentUser);
                 const userDoc = await getDoc(
                     doc(db, "users", currentUser.email)
                 );
-                const userData = userDoc.data();
-                setUser({ ...currentUser, role: userData.role });
+                const userData = userDoc.exists() ? userDoc.data() : {};
+                const userWithRole = {
+                    ...currentUser,
+                    role: userData.role || null,
+                };
+                setUser(userWithRole);
+                localStorage.setItem(
+                    "authUser",
+                    JSON.stringify({
+                        user: userWithRole,
+                        expirationTime: new Date().getTime() + TOKEN_EXPIRATION,
+                    })
+                );
             } else {
                 setUser(null);
+                localStorage.removeItem("authUser");
             }
         });
+
+        const activityHandler = () => setLastActivity(Date.now());
+        ["mousemove", "keypress", "click", "scroll"].forEach((event) =>
+            window.addEventListener(event, activityHandler)
+        );
+
+        const checkInactivity = setInterval(() => {
+            if (Date.now() - lastActivity > INACTIVITY_TIMEOUT) {
+                logOut();
+            }
+        }, 60000);
+
         return () => {
             unsubscribe();
+            ["mousemove", "keypress", "click", "scroll"].forEach((event) => {
+                window.removeEventListener(event, activityHandler);
+            });
+            clearInterval(checkInactivity);
         };
-    }, []);
+    }, [lastActivity, logOut, checkAuthState]);
 
     async function signUp(info) {
         try {
@@ -64,9 +121,20 @@ export function AuthContextProvider({ children }) {
             });
             return user;
         } catch (error) {
-            throw new Error(
-                "An error occurred while signing up your account. Please try again."
-            );
+            console.error("Signup error:", error);
+            if (error.code === "auth/email-already-in-use") {
+                throw new Error(
+                    "Email is already in ue. Please use a different email or try again."
+                );
+            } else if (error.code === "auth/weak-password") {
+                throw new Error(
+                    "Password is too weak. Please try a stronger password."
+                );
+            } else {
+                throw new Error(
+                    `An error occurred while signing up your account. Please try again. $ { error.message }`
+                );
+            }
         }
     }
 
@@ -125,17 +193,6 @@ export function AuthContextProvider({ children }) {
         }
     }
 
-    async function logOut() {
-        try {
-            await signOut(auth);
-            setUser(null);
-        } catch (error) {
-            throw new Error(
-                "An error occurred while signing out. Please try again."
-            );
-        }
-    }
-
     async function sendVerificationEmail() {
         try {
             await sendEmailVerification(auth.currentUser);
@@ -176,7 +233,7 @@ export function AuthContextProvider({ children }) {
     async function updateUserRole(user, role) {
         try {
             await updateDoc(doc(db, "users", user.email), { role });
-            setUser({ ...user, role });
+            setUser((prevUser) => ({ ...prevUser, role }));
         } catch (error) {
             throw new Error(
                 "An error occurred while updating your role. Please try again."

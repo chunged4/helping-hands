@@ -1,66 +1,47 @@
+// components/Navbar.js
 import React from "react";
 import { Link } from "react-router-dom";
-
 import { UserAuth } from "../context/AuthContext";
-
 import { RiNotification4Line } from "react-icons/ri";
-import { RiNotification4Fill } from "react-icons/ri";
-
 import logo from "../images/logo.jpg";
-
 import "../styles/Navbar.css";
 
 export const Navbar = () => {
-    const { user, logout } = UserAuth();
+    const { user, logOut } = UserAuth();
 
     return (
-        <nav>
-            <ul>
-                <div className="title">
-                    <h2> Helping Hands</h2> <img src={logo} alt="logo" />
-                </div>
+        <nav className="navbar">
+            <div className="navbar-left">
+                <img src={logo} alt="logo" className="navbar-logo" />
+                <h2 className="navbar-title">Helping Hands</h2>
+            </div>
+            <div className="navbar-right">
                 {user ? (
                     <>
-                        <div>
-                            <Link to="/home">Home</Link>
-                        </div>
+                        <Link to="/home">Home</Link>
                         {(user.role === "volunteer" ||
                             user.role === "coordinator") && (
                             <>
-                                <div>
-                                    <Link to="/calendar">Calendar</Link>
-                                </div>
-                                <div>
-                                    <Link to="/tasks">Tasks</Link>
-                                </div>
+                                <Link to="/calendar">Calendar</Link>
+                                <Link to="/tasks">Tasks</Link>
                             </>
                         )}
-                        <div>
-                            <Link to="/help">Help</Link>
-                        </div>
-                        <div>
-                            <Link to="/profile">Profile</Link>
-                        </div>
-                        <div>
-                            <Link to="/notifications">
-                                {/* if there is a notification, use <Rinotification4fill />, no notification, use <Rinotification4line /> */}
-                            </Link>
-                        </div>
-                        <div>
-                            <button onClick={logout}>Log Out</button>
-                        </div>
+                        <Link to="/help">Help</Link>
+                        <Link to="/profile">Profile</Link>
+                        <Link to="/notifications">
+                            <RiNotification4Line />
+                        </Link>
+                        <button onClick={logOut} className="navbar-button">
+                            Log Out
+                        </button>
                     </>
                 ) : (
                     <>
-                        <div>
-                            <Link to="/login">Log In</Link>
-                        </div>
-                        <div>
-                            <Link to="/signup">Get Started</Link>
-                        </div>
+                        <Link to="/login">Login</Link>
+                        <Link to="/signup">Sign Up</Link>
                     </>
                 )}
-            </ul>
+            </div>
         </nav>
     );
 };

@@ -25,11 +25,7 @@ export const Home = () => {
                         limit(5)
                     );
                 } else {
-                    q = query(
-                        eventsRef,
-                        where("start", ">=", now),
-                        limit(5)
-                    );
+                    q = query(eventsRef, where("start", ">=", now), limit(5));
                 }
                 const eventSnapshot = await getDocs(q);
                 const eventsList = eventSnapshot.docs.map((doc) => ({
@@ -63,7 +59,6 @@ export const Home = () => {
         <div>
             <Navbar />
             <div className="home-container">
-                {user && <h1>Welcome, {user.displayName}</h1>}
                 <h2>Dashboard</h2>
 
                 <div className="upcoming-events">

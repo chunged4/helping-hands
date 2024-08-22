@@ -1,22 +1,64 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
 .landingContainer {
     background-image: url("../images/cover.jpg");
-    background-size: cover;
-    background-position: center;
+    background-size: contain;
+    background-position: center center;
     background-repeat: no-repeat;
-    background-color: #000000;
-    min-height: 100vh;
+    height: 100vh;
     width: 100%;
     position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 20vh;
 }
 
 .content {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding: 2rem;
+    color: #000000;
+    background-color: rgba(211, 211, 211, 0.7);
+    border-radius: 5px;
+    max-width: 500px;
+    max-height: 80vh;
+}
+
+.content h3 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.content p {
+    font-size: 1.2rem;
+    max-width: 600px;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #000000;
+}
+
+.cta-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    background-color: #808080;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    align-self: center;
+}
+
+.cta-button:hover {
+    background-color: #a9a9a9;
 }

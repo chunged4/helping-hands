@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { auth } from "../config/firebase.config";
 
 import { UserAuth } from "../context/AuthContext";
 
@@ -13,10 +14,14 @@ export const EmailVerification = () => {
     const { email } = location.state || {};
 
     useEffect(() => {
-        if (user && user.emailVerified) {
-            navigate("/home");
-        }
-    }, [user, navigate]);
+        const checkVerification = async () => {
+            await auth.currentUser.reload();
+            if (auth.currentUser.emailVerified) {
+                navigate("/home");
+            }
+        };
+        checkVerification();
+    }, [navigate]);
 
     const userEmail = user ? user.email : email;
 
@@ -41,9 +46,9 @@ export const EmailVerification = () => {
         <div className="verify-container">
             <h1>One Last Step!</h1>
             <div>
-                A verification link has been sent to {email}. Please click the
-                link in your email to verify your account and complete your
-                signup.
+                A verification link has been sent to <b>{email}</b>. Please
+                click the link in your email to verify your account and complete
+                your signup.
             </div>
             <div>
                 If you don't see it, this process might take a couple of
