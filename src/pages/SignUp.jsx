@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import GoogleButton from "react-google-button";
 
 import { ShowPasswordIconButton } from "../components/ShowPasswordIconButton";
-import { RequirementCheckmark } from "../components/RequirementCheckmark";
+import { PasswordRequirements } from "../components/PasswordRequriements";
 import { UserAuth } from "../context/AuthContext";
 import { useValidation } from "../hooks/useValidation";
 
@@ -18,9 +18,7 @@ export const SignUp = () => {
         accountType: "",
     });
     const [error, setError] = useState(null);
-    const [passwordType, setPasswordType] = useState({
-        password: "password",
-    });
+    const [passwordType, setPasswordType] = useState("password");
     const [validateType, setValidateType] = useState({
         lower: false,
         upper: false,
@@ -90,7 +88,6 @@ export const SignUp = () => {
                         placeholder=" "
                         autoComplete="firstName"
                         type="text"
-                        required
                         aria-errormessage="firstName-error"
                         value={info.firstName}
                         onChange={handleInput}
@@ -109,7 +106,6 @@ export const SignUp = () => {
                         placeholder=" "
                         autoComplete="lastName"
                         type="text"
-                        required
                         aria-invalid="true"
                         aria-errormessage="lastName-error"
                         value={info.lastName}
@@ -129,7 +125,6 @@ export const SignUp = () => {
                         placeholder=" "
                         autoComplete="email"
                         type="email"
-                        required
                         aria-invalid="true"
                         aria-errormessage="email-error"
                         value={info.email}
@@ -140,76 +135,32 @@ export const SignUp = () => {
                     )}
                 </section>
 
-                <section>
+                <section className="password-section">
                     <label htmlFor="password">Password</label>
-                    <input
-                        className="form-element"
-                        id="password"
-                        name="password"
-                        placeholder=" "
-                        autoComplete="new-password"
-                        type={passwordType.password}
-                        value={info.password}
-                        onChange={handlePasswordInput}
-                    />
-                    <ShowPasswordIconButton
-                        passwordType={passwordType.password}
-                        setPasswordType={(newType) =>
-                            setPasswordType({
-                                ...passwordType,
-                                password: newType,
-                            })
-                        }
-                    />
+                    <div className="password-input-container">
+                        <input
+                            className="form-element"
+                            id="password"
+                            name="password"
+                            placeholder=" "
+                            autoComplete="new-password"
+                            type={passwordType}
+                            value={info.password}
+                            onChange={handlePasswordInput}
+                        />
+                        <PasswordRequirements validateType={validateType} />
+                        <ShowPasswordIconButton
+                            passwordType={passwordType}
+                            setPasswordType={setPasswordType}
+                        />
+                    </div>
                     {errors.password && (
                         <p className="error-message">{errors.password}</p>
                     )}
                 </section>
 
-                <section>
-                    <main className="tracker-box">
-                        <p>Password must contain the following:</p>
-
-                        <div
-                            className={
-                                validateType.lower
-                                    ? "validated"
-                                    : "not-validated"
-                            }
-                        >
-                            <RequirementCheckmark
-                                validateState={validateType.lower}
-                            />
-                            <span>Lowercase letter</span>
-                        </div>
-                        <div>
-                            <RequirementCheckmark
-                                validateState={validateType.upper}
-                            />
-                            Uppercase letter
-                        </div>
-                        <div>
-                            <RequirementCheckmark
-                                validateState={validateType.number}
-                            />
-                            Number
-                        </div>
-                        <div>
-                            <RequirementCheckmark
-                                validateState={validateType.symbol}
-                            />
-                            Symbol
-                        </div>
-                        <div>
-                            <RequirementCheckmark
-                                validateState={validateType.length}
-                            />
-                            10 Characters
-                        </div>
-                    </main>
-                </section>
-
                 {error && <p className="error-message">{error}</p>}
+
                 <button
                     className="form-element"
                     id="signUp"

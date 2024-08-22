@@ -13,9 +13,7 @@ export const LogIn = () => {
         password: "",
     });
     const [error, setError] = useState(null);
-    const [passwordType, setPasswordType] = useState({
-        password: "password",
-    });
+    const [passwordType, setPasswordType] = useState("password");
 
     const navigate = useNavigate();
     const { logIn, signInWithGoogle } = UserAuth();
@@ -76,7 +74,6 @@ export const LogIn = () => {
                         placeholder=" "
                         autoComplete="email"
                         type="email"
-                        required
                         aria-invalid="true"
                         aria-errormessage="email-error"
                         value={info.email}
@@ -84,27 +81,24 @@ export const LogIn = () => {
                     />
                 </section>
 
-                <section>
+                <section className="password-section">
                     <label htmlFor="current-password">Password</label>
-                    <input
-                        className="form-element"
-                        id="current-password"
-                        name="password"
-                        placeholder=" "
-                        autoComplete="current-password"
-                        type={passwordType.password}
-                        value={info.password}
-                        onChange={handleInput}
-                    />
-                    <ShowPasswordIconButton
-                        passwordType={passwordType.password}
-                        setPasswordType={(newType) =>
-                            setPasswordType({
-                                ...passwordType,
-                                password: newType,
-                            })
-                        }
-                    />
+                    <div className="password-input-container">
+                        <input
+                            className="form-element"
+                            id="current-password"
+                            name="password"
+                            placeholder=" "
+                            autoComplete="current-password"
+                            type={passwordType}
+                            value={info.password}
+                            onChange={handleInput}
+                        />
+                        <ShowPasswordIconButton
+                            passwordType={passwordType}
+                            setPasswordType={setPasswordType}
+                        />
+                    </div>
                 </section>
 
                 {error && <p className="error-message">{error}</p>}
@@ -119,7 +113,7 @@ export const LogIn = () => {
 
                 <section>
                     <GoogleButton
-                        className="form-element"
+                        className="google-button"
                         type="dark"
                         onClick={handleGoogleSignIn}
                     >
@@ -127,7 +121,6 @@ export const LogIn = () => {
                     </GoogleButton>
                 </section>
             </form>
-            <br></br>
             <div>
                 Don't have an account?{" "}
                 <Link to="/signup">Create an Account</Link>
