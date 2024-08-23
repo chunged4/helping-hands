@@ -1,0 +1,87 @@
+.role-selection-container {
+    min-height: 100vh;
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.role-selection-card {
+    max-width: 28rem;
+    width: 100%;
+    background-color: white;
+    padding: 2.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.role-selection-title {
+    margin-top: 1.5rem;
+    font-size: 1.875rem;
+    font-weight: 800;
+    color: #111827;
+    text-align: center;
+}
+
+.role-selection-subtitle {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #4b5563;
+    text-align: center;
+}
+
+.role-selection-error {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-radius: 0.375rem;
+}
+
+.role-selection-buttons {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.role-button {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.role-button-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.role-button-primary:hover {
+    background-color: #2563eb;
+}
+
+.role-button-outline {
+    background-color: white;
+    color: #3b82f6;
+    border: 1px solid #3b82f6;
+}
+
+.role-button-outline:hover {
+    background-color: #eff6ff;
+}
+
+.role-button-secondary {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.role-button-secondary:hover {
+    background-color: #d1d5db;
+}

@@ -26,7 +26,7 @@ export const Navbar = () => {
                                 <Link to="/tasks">Tasks</Link>
                             </>
                         )}
-                        <Link to="/help">Help</Link>
+                        {user.role === "member" && <Link to="/help">Help</Link>}
                         <Link to="/profile">Profile</Link>
                         <Link to="/notifications">
                             <RiNotification4Line />

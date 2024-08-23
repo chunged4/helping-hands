@@ -7,9 +7,8 @@ import { collection, query, where, getDocs, limit } from "firebase/firestore";
 
 export const Home = () => {
     const navigate = useNavigate();
-    const { user, logOut } = UserAuth();
+    const { user } = UserAuth();
     const [upcomingEvents, setUpcomingEvents] = useState([]);
-    const [notifications, setNotifications] = useState([]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -33,27 +32,10 @@ export const Home = () => {
                     ...doc.data(),
                 }));
                 setUpcomingEvents(eventsList);
-                const userRef = collection(db, "users");
-                const userDoc = await getDocs(
-                    query(userRef, where("email", "==", user.email))
-                );
-                if (!userDoc.empty) {
-                    const userData = userDoc.docs[0].data();
-                    setNotifications(userData.notifications || []);
-                }
             }
         };
         fetchData();
     }, [user]);
-
-    const handleLogOut = async () => {
-        try {
-            await logOut();
-            navigate("/login");
-        } catch (error) {
-            console.error(error);
-        }
-    };
 
     return (
         <div>
@@ -76,19 +58,6 @@ export const Home = () => {
                         </ul>
                     ) : (
                         <p>No upcoming events</p>
-                    )}
-                </div>
-
-                <div className="notifications">
-                    <h3>Notifications</h3>
-                    {notifications.length > 0 ? (
-                        <ul>
-                            {notifications.map((notification, index) => (
-                                <li key={index}>{notification.message}</li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p>No new notifications</p>
                     )}
                 </div>
 
@@ -115,8 +84,6 @@ export const Home = () => {
                         </button>
                     </div>
                 )}
-
-                <button onClick={handleLogOut}>Logout</button>
             </div>
         </div>
     );

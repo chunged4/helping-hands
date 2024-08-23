@@ -1,10 +1,11 @@
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 import { UserAuth } from "../context/AuthContext";
 
 export const ProtectedRoute = ({ children, allowedRoles }) => {
     const { user } = UserAuth();
+    const location = useLocation();
 
     if (!user) {
         return <Navigate to="/" />;
@@ -15,6 +16,9 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
+        if (location.pathname === "/help" && user.role !== "member") {
+            return <Navigate to="/home" />;
+        }
         return <Navigate to="/home" />;
     }
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 
 import { UserAuth } from "../context/AuthContext";
 
-export const Notifications = () => {
+export const NotificationPopUp = () => {
     const [notifications, setNotifications] = useState([]);
     const { user } = UserAuth();
 

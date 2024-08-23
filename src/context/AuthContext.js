@@ -25,6 +25,7 @@ const TOKEN_EXPIRATION = 3 * 60 * 60 * 1000;
 
 export function AuthContextProvider({ children }) {
     const [user, setUser] = useState(null);
+    const [tempUser, setTempUser] = useState(null);
     const [lastActivity, setLastActivity] = useState(Date.now());
 
     const logOut = useCallback(async () => {
@@ -168,24 +169,31 @@ export function AuthContextProvider({ children }) {
     async function signInWithGoogle() {
         try {
             const results = await signInWithPopup(auth, googleProvider);
-            const fullName = results.user.displayName;
-            const [firstName, lastName] = fullName.split(" ");
-            const userDoc = await getDoc(doc(db, "users", results.user.email));
+            const { user: googleUser } = results;
+            setTempUser(googleUser);
+            return googleUser;
+        } catch (error) {
+            console.error("Google sign-in error:", error);
+            throw error;
+        }
+    }
 
-            if (!userDoc.exists()) {
-                await setDoc(doc(db, "users", results.user.email), {
-                    firstName,
-                    lastName,
-                    signedUpServices: [],
-                    postedServices: [],
-                    notifications: [],
-                });
-                return results.user;
-            } else {
-                const userData = userDoc.data();
-                setUser({ ...results.user, role: userData.role });
-                return null;
-            }
+    async function completeRegistration(role) {
+        if (!tempUser) {
+            throw new Error("No temporary user found.");
+        }
+
+        try {
+            await setDoc(doc(db, "users", tempUser.email), {
+                firstName: tempUser.displayName.split(" ")[0],
+                lastName: tempUser.displayName.split(" ")[1] || "",
+                role: role,
+                signedUpServices: [],
+                postedServices: [],
+                notifications: [],
+            });
+            setUser({ ...tempUser, role });
+            setTempUser(null);
         } catch (error) {
             throw new Error(
                 "An error occurred while logging in with Google. Please try again."
@@ -245,19 +253,25 @@ export function AuthContextProvider({ children }) {
         return auth.currentUser?.emailVerified ?? false;
     }
 
+    const clearTempUser = () => {
+        setTempUser(null);
+    };
+
     return (
         <AuthContext.Provider
             value={{
                 user,
                 signUp,
                 logIn,
-                signInWithGoogle,
                 logOut,
+                signInWithGoogle,
+                completeRegistration,
                 sendVerificationEmail,
                 updateUserProfile,
                 addNotification,
-                isEmailVerified,
                 updateUserRole,
+                isEmailVerified,
+                clearTempUser,
             }}
         >
             {children}
