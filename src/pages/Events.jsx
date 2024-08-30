@@ -2,11 +2,11 @@ import React from "react";
 
 import { Navbar } from "../components/NavBar.jsx";
 
-export const Profile = () => {
+export const Events = () => {
     return (
         <div>
             <Navbar />
-            <h1>Profile</h1>
+            <h1>Events</h1>
         </div>
     );
 };

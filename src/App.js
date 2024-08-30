@@ -14,8 +14,7 @@ import { SignUp } from "./pages/SignUp";
 import { EmailVerification } from "./pages/EmailVerification";
 import { Home } from "./pages/Home";
 import { Calendar } from "./pages/Calendar";
-import { Profile } from "./pages/Profile";
-import { Tasks } from "./pages/Tasks";
+import { Events } from "./pages/Events";
 import { HelpForm } from "./pages/HelpForm";
 import { RoleSelectionPage } from "./pages/RoleSelectionPage";
 
@@ -39,9 +38,7 @@ function AppRoutes() {
             <Route
                 path="/home"
                 element={
-                    <ProtectedRoute
-                        allowedRoles={["volunteer", "coordinator", "member"]}
-                    >
+                    <ProtectedRoute allowedRoles={["volunteer", "coordinator"]}>
                         <Home />
                     </ProtectedRoute>
                 }
@@ -55,18 +52,10 @@ function AppRoutes() {
                 }
             />
             <Route
-                path="/tasks"
+                path="/events"
                 element={
                     <ProtectedRoute allowedRoles={["volunteer", "coordinator"]}>
-                        <Tasks />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/profile"
-                element={
-                    <ProtectedRoute>
-                        <Profile />
+                        <Events />
                     </ProtectedRoute>
                 }
             />

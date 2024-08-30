@@ -16,6 +16,10 @@ export const Landing = () => {
         }
     }, [user, navigate]);
 
+    if (user) {
+        return null;
+    }
+
     return (
         <div>
             <div className="landingContainer">

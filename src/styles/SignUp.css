@@ -115,8 +115,12 @@ hr {
     margin: 1.5rem 0;
 }
 
-.form-element.google-button {
-    width: 100%;
-    align-items: center;
+section:has(.google-button) {
+    display: flex;
     justify-content: center;
+}
+
+.google-button {
+    width: auto !important;
+    padding: 0.5rem;
 }

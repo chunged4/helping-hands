@@ -19,6 +19,9 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
         if (location.pathname === "/help" && user.role !== "member") {
             return <Navigate to="/home" />;
         }
+        if (location.pathname === "/home" && user.role === "member") {
+            return <Navigate to="/help" />;
+        }
         return <Navigate to="/home" />;
     }
 

@@ -66,11 +66,21 @@ export const SignUp = () => {
 
     const handleGoogleSignIn = async (e) => {
         e.preventDefault();
+        setError(null);
         try {
-            await signInWithGoogle();
-            navigate("/role-selection", { state: { signUpMethod: "google" } });
+            const result = await signInWithGoogle();
+            if (result.user) {
+                navigate("/role-selection", {
+                    state: { signUpMethod: "google" },
+                });
+            } else {
+                setError("Failed to sign in with Google. Please try again.");
+            }
         } catch (error) {
-            setError(error.message);
+            setError(
+                error.message ||
+                    "Failed to sign in with Google. Please try again."
+            );
         }
     };
 
@@ -172,7 +182,7 @@ export const SignUp = () => {
 
                 <section>
                     <GoogleButton
-                        className="form-element"
+                        className="google-button"
                         type="dark"
                         onClick={handleGoogleSignIn}
                     >

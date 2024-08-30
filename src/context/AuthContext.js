@@ -17,7 +17,19 @@ import {
     onAuthStateChanged,
 } from "firebase/auth";
 import { auth, googleProvider, db } from "../config/firebase.config";
-import { doc, setDoc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import {
+    doc,
+    setDoc,
+    getDoc,
+    updateDoc,
+    collection,
+    addDoc,
+    query,
+    where,
+    getDocs,
+    Timestamp,
+    deleteDoc,
+} from "firebase/firestore";
 
 const AuthContext = createContext();
 const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
@@ -28,51 +40,59 @@ export function AuthContextProvider({ children }) {
     const [tempUser, setTempUser] = useState(null);
     const [lastActivity, setLastActivity] = useState(Date.now());
 
+    const updateUserState = useCallback(async (currentUser) => {
+        if (currentUser) {
+            const userDoc = await getDoc(doc(db, "users", currentUser.email));
+            const userData = userDoc.exists() ? userDoc.data() : {};
+            const userWithRole = {
+                ...currentUser,
+                role: userData.role || null,
+            };
+            setUser(userWithRole);
+            localStorage.setItem(
+                "authUser",
+                JSON.stringify({
+                    user: userWithRole,
+                    expirationTime: new Date().getTime() + TOKEN_EXPIRATION,
+                })
+            );
+        } else {
+            setUser(null);
+            localStorage.removeItem("authUser");
+        }
+    }, []);
+
+    const handleAuthError = useCallback((error, errorMessage) => {
+        console.error(errorMessage, error);
+        throw new Error(error.message || errorMessage);
+    }, []);
+
     const logOut = useCallback(async () => {
         try {
             await signOut(auth);
-            setUser(null);
-            localStorage.removeItem("authUser");
+            updateUserState(null);
         } catch (error) {
-            throw new Error(
+            handleAuthError(
+                error,
                 "An error occurred while logging out. Please try again."
             );
         }
-    }, []);
-
-    const checkAuthState = useCallback(() => {
-        const storedUser = JSON.parse(localStorage.getItem("authUser"));
-        if (storedUser && new Date().getTime() < storedUser.expirationTime) {
-            setUser(storedUser.user);
-        }
-    }, []);
+    }, [updateUserState, handleAuthError]);
 
     useEffect(() => {
+        const checkAuthState = () => {
+            const storedUser = JSON.parse(localStorage.getItem("authUser"));
+            if (
+                storedUser &&
+                new Date().getTime() < storedUser.expirationTime
+            ) {
+                setUser(storedUser.user);
+            }
+        };
+
         checkAuthState();
 
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            if (currentUser) {
-                const userDoc = await getDoc(
-                    doc(db, "users", currentUser.email)
-                );
-                const userData = userDoc.exists() ? userDoc.data() : {};
-                const userWithRole = {
-                    ...currentUser,
-                    role: userData.role || null,
-                };
-                setUser(userWithRole);
-                localStorage.setItem(
-                    "authUser",
-                    JSON.stringify({
-                        user: userWithRole,
-                        expirationTime: new Date().getTime() + TOKEN_EXPIRATION,
-                    })
-                );
-            } else {
-                setUser(null);
-                localStorage.removeItem("authUser");
-            }
-        });
+        const unsubscribe = onAuthStateChanged(auth, updateUserState);
 
         const activityHandler = () => setLastActivity(Date.now());
         ["mousemove", "keypress", "click", "scroll"].forEach((event) =>
@@ -84,7 +104,6 @@ export function AuthContextProvider({ children }) {
                 logOut();
             }
         }, 60000);
-
         return () => {
             unsubscribe();
             ["mousemove", "keypress", "click", "scroll"].forEach((event) => {
@@ -92,193 +111,228 @@ export function AuthContextProvider({ children }) {
             });
             clearInterval(checkInactivity);
         };
-    }, [lastActivity, logOut, checkAuthState]);
+    }, [lastActivity, logOut, updateUserState]);
 
-    async function signUp(info) {
-        try {
-            const checkEmailExists = await fetchSignInMethodsForEmail(
-                auth,
-                info.email
-            );
-            if (checkEmailExists.length > 0) {
-                throw new Error("Email address already exists.");
-            }
+    const authOperations = {
+        signUp: async (info) => {
+            try {
+                const methods = await fetchSignInMethodsForEmail(
+                    auth,
+                    info.email
+                );
+                if (methods.length > 0)
+                    throw new Error("Email address already exists.");
 
-            const userCredential = await createUserWithEmailAndPassword(
-                auth,
-                info.email,
-                info.password
-            );
-            const user = userCredential.user;
-            await updateProfile(user, {
-                displayName: `${info.firstName} ${info.lastName}`,
-            });
-            await setDoc(doc(db, "users", info.email), {
-                firstName: info.firstName,
-                lastName: info.lastName,
-                signedUpServices: [],
-                postedServices: [],
-                notifications: [],
-            });
-            return user;
-        } catch (error) {
-            console.error("Signup error:", error);
-            if (error.code === "auth/email-already-in-use") {
-                throw new Error(
-                    "Email is already in ue. Please use a different email or try again."
+                const userCredential = await createUserWithEmailAndPassword(
+                    auth,
+                    info.email,
+                    info.password
                 );
-            } else if (error.code === "auth/weak-password") {
-                throw new Error(
-                    "Password is too weak. Please try a stronger password."
-                );
-            } else {
-                throw new Error(
-                    `An error occurred while signing up your account. Please try again. $ { error.message }`
-                );
-            }
-        }
-    }
+                const user = userCredential.user;
+                await updateProfile(user, {
+                    displayName: `${info.firstName} ${info.lastName}`,
+                });
 
-    async function logIn(info) {
-        try {
-            const userCredential = await signInWithEmailAndPassword(
-                auth,
-                info.email,
-                info.password
-            );
-            const user = userCredential.user;
-            const userDoc = await getDoc(doc(db, "users", user.email));
-            const userData = userDoc.data();
-            setUser({ ...user, role: userData.role });
-        } catch (error) {
-            if (
-                error.code === "auth/user-not-found" ||
-                error.code === "auth/wrong-password"
-            ) {
-                throw new Error(
-                    "Incorrect email or password. Please try again."
-                );
-            } else {
-                throw new Error(
-                    "An error occurred while logging in with email and password. Please try again."
+                const defaultRole = "member";
+                const role = info.role || defaultRole;
+
+                const userData = {
+                    firstName: info.firstName,
+                    lastName: info.lastName,
+                    role: role,
+                    notifications: [],
+                };
+
+                if (role === "coordinator") {
+                    userData.postedServices = [];
+                } else if (role === "volunteer") {
+                    userData.signedUpServices = [];
+                }
+
+                await setDoc(doc(db, "users", info.email), userData);
+                return user;
+            } catch (error) {
+                handleAuthError(
+                    error,
+                    "An error occurred while signing up. Please try again."
                 );
             }
-        }
-    }
+        },
 
-    async function signInWithGoogle() {
-        try {
-            const results = await signInWithPopup(auth, googleProvider);
-            const { user: googleUser } = results;
-            setTempUser(googleUser);
-            return googleUser;
-        } catch (error) {
-            console.error("Google sign-in error:", error);
-            throw error;
-        }
-    }
+        logIn: async (info) => {
+            try {
+                const userCredential = await signInWithEmailAndPassword(
+                    auth,
+                    info.email,
+                    info.password
+                );
+                await updateUserState(userCredential.user);
+            } catch (error) {
+                handleAuthError(
+                    error,
+                    "An error occurred while logging in. Please try again."
+                );
+            }
+        },
 
-    async function completeRegistration(role) {
-        if (!tempUser) {
-            throw new Error("No temporary user found.");
-        }
+        signInWithGoogle: async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                setTempUser(result.user);
+                const userDoc = await getDoc(
+                    doc(db, "users", result.user.email)
+                );
+                if (userDoc.exists()) {
+                    await updateUserState(result.user);
+                    return { user: result.user, existingUser: true };
+                }
+                return { user: result.user, existingUser: false };
+            } catch (error) {
+                handleAuthError(
+                    error,
+                    "An error occurred during Google sign-in. Please try again."
+                );
+            }
+        },
 
-        try {
-            await setDoc(doc(db, "users", tempUser.email), {
-                firstName: tempUser.displayName.split(" ")[0],
-                lastName: tempUser.displayName.split(" ")[1] || "",
-                role: role,
-                signedUpServices: [],
-                postedServices: [],
-                notifications: [],
-            });
-            setUser({ ...tempUser, role });
-            setTempUser(null);
-        } catch (error) {
-            throw new Error(
-                "An error occurred while logging in with Google. Please try again."
-            );
-        }
-    }
+        completeRegistration: async (role) => {
+            if (!tempUser) throw new Error("No temporary user found.");
+            try {
+                const userData = {
+                    firstName: tempUser.displayName.split(" ")[0],
+                    lastName: tempUser.displayName.split(" ")[1] || "",
+                    role: role,
+                    notifications: [],
+                    ...(role === "coordinator" ? { postedServices: [] } : {}),
+                    ...(role === "volunteer" ? { signedUpServices: [] } : {}),
+                };
+                await setDoc(doc(db, "users", tempUser.email), userData);
+                setUser({ ...tempUser, role });
+                setTempUser(null);
+            } catch (error) {
+                handleAuthError(
+                    error,
+                    "An error occurred while completing registration. Please try again."
+                );
+            }
+        },
 
-    async function sendVerificationEmail() {
-        try {
-            await sendEmailVerification(auth.currentUser);
-        } catch (error) {
-            console.error(error);
-            throw new Error(
-                "An error occurred while sending the verification email. Please try again."
-            );
-        }
-    }
+        sendVerificationEmail: async () => {
+            try {
+                await sendEmailVerification(auth.currentUser);
+            } catch (error) {
+                handleAuthError(
+                    error,
+                    "An error occurred while sending the verification email. Please try again."
+                );
+            }
+        },
 
-    async function updateUserProfile(updates) {
-        try {
-            const user = auth.currentUser;
-            await updateProfile(user, updates);
-            await updateDoc(doc(db, "users", user.email), updates);
-            setUser((prevUser) => ({ ...prevUser, ...updates }));
-        } catch (error) {
-            throw new Error(
-                "An error occurred while updating your profile. Please try again."
-            );
-        }
-    }
+        updateUserProfile: async (updates) => {
+            try {
+                const user = auth.currentUser;
+                await updateProfile(user, updates);
+                await updateDoc(doc(db, "users", user.email), updates);
+                setUser((prevUser) => ({ ...prevUser, ...updates }));
+            } catch (error) {
+                handleAuthError(
+                    error,
+                    "An error occurred while updating your profile. Please try again."
+                );
+            }
+        },
 
-    async function addNotification(notification) {
-        try {
-            const user = auth.currentUser;
-            await updateDoc(doc(db, "users", user.email), {
-                notifications: arrayUnion(notification),
-            });
-        } catch (error) {
-            throw new Error(
-                "An error occurred while adding the notification. Please try again."
-            );
-        }
-    }
+        addNotification: async (notification) => {
+            if (!notification.userId) return;
+            try {
+                const notificationData = {
+                    ...notification,
+                    createdTimeStamp: Timestamp.now(),
+                    expiresAt: Timestamp.fromDate(
+                        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                    ),
+                };
+                await addDoc(
+                    collection(
+                        db,
+                        `users/${notification.userId}/notifications`
+                    ),
+                    notificationData
+                );
+            } catch (error) {
+                handleAuthError(
+                    error,
+                    "An error occurred while adding the notification. Please try again."
+                );
+            }
+        },
 
-    async function updateUserRole(user, role) {
-        try {
-            await updateDoc(doc(db, "users", user.email), { role });
-            setUser((prevUser) => ({ ...prevUser, role }));
-        } catch (error) {
-            throw new Error(
-                "An error occurred while updating your role. Please try again."
-            );
-        }
-    }
+        fetchNotifications: async () => {
+            if (!user) return [];
+            try {
+                const q = query(
+                    collection(db, `users/${user.uid}/notifications`),
+                    where("expiresAt", ">", Timestamp.now())
+                );
+                const querySnapshot = await getDocs(q);
+                return querySnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+            } catch (error) {
+                handleAuthError(
+                    error,
+                    "An error occurred while fetching notifications."
+                );
+                return [];
+            }
+        },
 
-    function isEmailVerified() {
-        return auth.currentUser?.emailVerified ?? false;
-    }
+        updateUserRole: async (user, role) => {
+            try {
+                await updateDoc(doc(db, "users", user.email), { role });
+                setUser((prevUser) => ({ ...prevUser, role }));
+            } catch (error) {
+                handleAuthError(
+                    error,
+                    "An error occurred while updating your role. Please try again."
+                );
+            }
+        },
 
-    const clearTempUser = () => {
-        setTempUser(null);
+        isEmailVerified: () => auth.currentUser?.emailVerified ?? false,
+
+        clearTempUser: () => setTempUser(null),
     };
 
+    useEffect(() => {
+        const deleteExpiredNotifications = async () => {
+            try {
+                const q = query(
+                    collection(db, "notifications"),
+                    where("expiresAt", "<=", Timestamp.now())
+                );
+                const querySnapshot = await getDocs(q);
+                await Promise.all(
+                    querySnapshot.docs.map((doc) => deleteDoc(doc.ref))
+                );
+            } catch (error) {
+                console.error("Error deleting expired notifications:", error);
+            }
+        };
+
+        const interval = setInterval(
+            deleteExpiredNotifications,
+            24 * 60 * 60 * 1000
+        );
+        return () => clearInterval(interval);
+    }, []);
+
     return (
-        <AuthContext.Provider
-            value={{
-                user,
-                signUp,
-                logIn,
-                logOut,
-                signInWithGoogle,
-                completeRegistration,
-                sendVerificationEmail,
-                updateUserProfile,
-                addNotification,
-                updateUserRole,
-                isEmailVerified,
-                clearTempUser,
-            }}
-        >
+        <AuthContext.Provider value={{ user, ...authOperations }}>
             {children}
         </AuthContext.Provider>
     );
 }
 
-export function UserAuth() {
-    return useContext(AuthContext);
-}
+export const UserAuth = () => useContext(AuthContext);

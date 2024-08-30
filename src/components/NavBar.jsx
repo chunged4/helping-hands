@@ -1,13 +1,20 @@
-// components/Navbar.js
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { UserAuth } from "../context/AuthContext";
-import { RiNotification4Line } from "react-icons/ri";
+import { RiNotification4Line, RiNotification4Fill } from "react-icons/ri";
+import { NotificationPopUp } from "./NotificationPopUp";
+
 import logo from "../images/logo.jpg";
 import "../styles/Navbar.css";
+import "../styles/NotificationPopUp.css";
 
 export const Navbar = () => {
     const { user, logOut } = UserAuth();
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+    const toggleNotificationModal = () => {
+        setIsNotificationOpen(!isNotificationOpen);
+    };
 
     return (
         <nav className="navbar">
@@ -18,19 +25,29 @@ export const Navbar = () => {
             <div className="navbar-right">
                 {user ? (
                     <>
-                        <Link to="/home">Home</Link>
                         {(user.role === "volunteer" ||
                             user.role === "coordinator") && (
                             <>
+                                <Link to="/home">Home</Link>
                                 <Link to="/calendar">Calendar</Link>
-                                <Link to="/tasks">Tasks</Link>
+                            </>
+                        )}
+                        {user.role === "coordinator" && (
+                            <>
+                                <Link to="/create-event">Create Event</Link>
                             </>
                         )}
                         {user.role === "member" && <Link to="/help">Help</Link>}
-                        <Link to="/profile">Profile</Link>
-                        <Link to="/notifications">
-                            <RiNotification4Line />
-                        </Link>
+                        <button
+                            onClick={toggleNotificationModal}
+                            className="navbar-icon-button"
+                        >
+                            {isNotificationOpen ? (
+                                <RiNotification4Line />
+                            ) : (
+                                <RiNotification4Fill />
+                            )}
+                        </button>
                         <button onClick={logOut} className="navbar-button">
                             Log Out
                         </button>
@@ -42,6 +59,11 @@ export const Navbar = () => {
                     </>
                 )}
             </div>
+            {isNotificationOpen && (
+                <div className="notification-modal">
+                    <NotificationPopUp />
+                </div>
+            )}
         </nav>
     );
 };

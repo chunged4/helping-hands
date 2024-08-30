@@ -14,9 +14,10 @@ export const LogIn = () => {
     });
     const [error, setError] = useState(null);
     const [passwordType, setPasswordType] = useState("password");
+    const [isLoading, setIsLoading] = useState(false);
 
     const navigate = useNavigate();
-    const { logIn, signInWithGoogle } = UserAuth();
+    const { user, logIn, signInWithGoogle, updateUserRole } = UserAuth();
 
     const handleInput = (e) => {
         setInfo({ ...info, [e.target.name]: e.target.value });
@@ -41,30 +42,55 @@ export const LogIn = () => {
             return;
         }
 
+        setIsLoading(true);
         try {
             await logIn(info);
             setError(null);
-            navigate("/home");
+            if (user.role === "member") {
+                navigate("/help");
+            } else {
+                navigate("/home");
+            }
         } catch (error) {
             setError(error.message);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handleGoogleSignIn = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
+        setError(null);
         try {
-            await signInWithGoogle();
+            const { user, existingUser } = await signInWithGoogle();
+            if (!existingUser) {
+                await updateUserRole(user, "member");
+            }
+            if (user.role === "member") {
+                navigate("/help");
+            }
             navigate("/home");
         } catch (error) {
-            setError(error.message);
+            console.error(error.message);
+            setError("Failed to sign in with Google.");
+        } finally {
+            setIsLoading(false);
         }
     };
+
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <div className="login-page">
             <form className="login-form">
                 <h1>Log In</h1>
-
+                <p>
+                    Logging in using Google without an account will default to a
+                    member.
+                </p>
                 <section>
                     <label htmlFor="email">Email</label>
                     <input
@@ -121,7 +147,7 @@ export const LogIn = () => {
                     </GoogleButton>
                 </section>
             </form>
-            <div>
+            <div className="message">
                 Don't have an account?{" "}
                 <Link to="/signup">Create an Account</Link>
             </div>
