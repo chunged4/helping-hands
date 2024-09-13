@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GoogleButton from "react-google-button";
 
@@ -18,6 +18,32 @@ export const LogIn = () => {
 
     const navigate = useNavigate();
     const { user, logIn, signInWithGoogle, updateUserRole } = UserAuth();
+
+    const redirectBasedOnRole = useCallback(
+        (currentUser) => {
+            if (currentUser) {
+                if (currentUser.role === "member") {
+                    navigate("/help");
+                } else if (
+                    currentUser.role === "volunteer" ||
+                    currentUser.role === "coordinator"
+                ) {
+                    navigate("/home");
+                } else {
+                    setError("User role not found. Please contact support.");
+                }
+            } else {
+                setError("User not found. Please try logging in again.");
+            }
+        },
+        [navigate]
+    );
+
+    useEffect(() => {
+        if (user) {
+            redirectBasedOnRole(user);
+        }
+    }, [user, redirectBasedOnRole]);
 
     const handleInput = (e) => {
         setInfo({ ...info, [e.target.name]: e.target.value });
@@ -46,11 +72,6 @@ export const LogIn = () => {
         try {
             await logIn(info);
             setError(null);
-            if (user.role === "member") {
-                navigate("/help");
-            } else {
-                navigate("/home");
-            }
         } catch (error) {
             setError(error.message);
         } finally {
@@ -63,14 +84,10 @@ export const LogIn = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const { user, existingUser } = await signInWithGoogle();
+            const { user: googleUser, existingUser } = await signInWithGoogle();
             if (!existingUser) {
-                await updateUserRole(user, "member");
+                await updateUserRole(googleUser, "member");
             }
-            if (user.role === "member") {
-                navigate("/help");
-            }
-            navigate("/home");
         } catch (error) {
             console.error(error.message);
             setError("Failed to sign in with Google.");
@@ -85,7 +102,7 @@ export const LogIn = () => {
 
     return (
         <div className="login-page">
-            <form className="login-form">
+            <form className="login-form" onSubmit={handleLogIn}>
                 <h1>Log In</h1>
                 <p>
                     Logging in using Google without an account will default to a
@@ -128,11 +145,7 @@ export const LogIn = () => {
                 </section>
 
                 {error && <p className="error-message">{error}</p>}
-                <button
-                    className="form-element"
-                    id="logIn"
-                    onClick={handleLogIn}
-                >
+                <button className="form-element" id="logIn" type="submit">
                     Log In
                 </button>
                 <hr></hr>

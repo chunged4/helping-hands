@@ -16,7 +16,7 @@ import { Home } from "./pages/Home";
 import { Calendar } from "./pages/Calendar";
 import { Events } from "./pages/Events";
 import { HelpForm } from "./pages/HelpForm";
-import { RoleSelectionPage } from "./pages/RoleSelectionPage";
+import { RoleSelection } from "./pages/RoleSelection";
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -34,7 +34,7 @@ function AppRoutes() {
             <Route path="/login" element={<LogIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/verify-page" element={<EmailVerification />} />
-            <Route path="/role-selection" element={<RoleSelectionPage />} />
+            <Route path="/role-selection" element={<RoleSelection />} />
             <Route
                 path="/home"
                 element={

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { UserAuth } from "../context/AuthContext";
 import { RiNotification4Line, RiNotification4Fill } from "react-icons/ri";
 import { NotificationPopUp } from "./NotificationPopUp";
@@ -12,8 +12,19 @@ export const Navbar = () => {
     const { user, logOut } = UserAuth();
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
+    const navigate = useNavigate();
+
     const toggleNotificationModal = () => {
         setIsNotificationOpen(!isNotificationOpen);
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logOut();
+            navigate("/");
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     return (
@@ -48,7 +59,10 @@ export const Navbar = () => {
                                 <RiNotification4Fill />
                             )}
                         </button>
-                        <button onClick={logOut} className="navbar-button">
+                        <button
+                            onClick={handleLogout}
+                            className="navbar-button"
+                        >
                             Log Out
                         </button>
                     </>

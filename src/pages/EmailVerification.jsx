@@ -8,6 +8,8 @@ import "../styles/EmailVerification.css";
 
 export const EmailVerification = () => {
     const [error, setError] = useState(null);
+    const [isVerified, setIsVerified] = useState(false);
+    const [cooldown, setCooldown] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
     const { user, sendVerificationEmail } = UserAuth();
@@ -15,13 +17,26 @@ export const EmailVerification = () => {
 
     useEffect(() => {
         const checkVerification = async () => {
-            await auth.currentUser.reload();
-            if (auth.currentUser.emailVerified) {
-                navigate("/home");
+            if (auth.currentUser) {
+                await auth.currentUser.reload();
+                if (auth.currentUser.emailVerified) {
+                    setIsVerified(true);
+                    navigate("/home");
+                }
             }
         };
-        checkVerification();
+
+        const interval = setInterval(checkVerification, 5000);
+
+        return () => clearInterval(interval);
     }, [navigate]);
+
+    useEffect(() => {
+        if (cooldown > 0) {
+            const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [cooldown]);
 
     const userEmail = user ? user.email : email;
 
@@ -34,19 +49,44 @@ export const EmailVerification = () => {
     }
 
     const handleResendVerification = async () => {
+        if (cooldown > 0) {
+            setError(
+                `Please wait ${cooldown} seconds before requesting another email.`
+            );
+            return;
+        }
+
         try {
             await sendVerificationEmail();
             setError(null);
+            setCooldown(60);
         } catch (error) {
-            setError(error.message);
+            if (error.code === "auth/too-many-requests") {
+                setError("Too many requests. Please try again later.");
+                setCooldown(300);
+            } else {
+                setError(error.message);
+            }
         }
     };
+
+    if (isVerified) {
+        return (
+            <div className="verify-container">
+                <h1>Email Verified!</h1>
+                <p>
+                    Your email has been successfully verified. Redirecting to
+                    home page...
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="verify-container">
             <h1>One Last Step!</h1>
             <div>
-                A verification link has been sent to <b>{email}</b>. Please
+                A verification link has been sent to <b>{userEmail}</b>. Please
                 click the link in your email to verify your account and complete
                 your signup.
             </div>
@@ -55,12 +95,15 @@ export const EmailVerification = () => {
                 minutes, or you may need to check your <b>spam</b> folder.
             </div>
             <div>
-                If you have verified, but have not yet been redirected, you can
-                click <Link to="/home">here</Link>
+                After clicking the verification link, you will be automatically
+                redirected. If you have verified, but have not yet been
+                redirected, you can click <Link to="/home">here</Link>
             </div>
             <div>Still can't find the email?</div>
-            <button onClick={handleResendVerification}>
-                Resend Verification Email
+            <button onClick={handleResendVerification} disabled={cooldown > 0}>
+                {cooldown > 0
+                    ? `Resend Verification Email (${cooldown}s)`
+                    : "Resend Verification Email"}
             </button>
             {error && <p className="error-message">{error}</p>}
         </div>

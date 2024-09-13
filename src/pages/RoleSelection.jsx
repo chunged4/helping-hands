@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { UserAuth } from "../context/AuthContext";
 
-import "../styles/RoleSelectionPage.css";
+import "../styles/RoleSelection.css";
 
-export const RoleSelectionPage = () => {
+export const RoleSelection = () => {
     const [error, setError] = useState(null);
     const {
         user,
@@ -12,12 +12,15 @@ export const RoleSelectionPage = () => {
         completeRegistration,
         clearTempUser,
         updateUserRole,
+        sendVerificationEmail,
     } = UserAuth();
 
     const navigate = useNavigate();
+    const location = useLocation();
+    const { signUpMethod, email } = location.state || {};
 
     useEffect(() => {
-        if (!tempUser && !user) {
+        if (!tempUser && !user && !email) {
             navigate("/signup");
         }
         return () => {
@@ -25,27 +28,59 @@ export const RoleSelectionPage = () => {
                 clearTempUser();
             }
         };
-    }, [tempUser, user, navigate, clearTempUser]);
+    }, [tempUser, user, email, navigate, clearTempUser]);
 
     const handleRoleSelection = async (role) => {
         try {
+            let updatedUser;
             if (tempUser) {
-                await completeRegistration(role);
+                updatedUser = await completeRegistration(role);
             } else if (user) {
-                await updateUserRole(user, role);
-            }
-            if (role === "member") {
-                navigate("/help");
+                updatedUser = await updateUserRole(user, role);
+            } else if (email) {
+                updatedUser = await updateUserRole({ email }, role);
             } else {
-                navigate("/home");
+                throw new Error("No user or email found for role update");
+            }
+
+            if (!updatedUser) {
+                throw new Error(
+                    "Failed to update user role: updateUserRole returned null or undefined"
+                );
+            }
+
+            if (signUpMethod === "email") {
+                try {
+                    await sendVerificationEmail();
+                    navigate("/verify-page", {
+                        state: { email: updatedUser.email },
+                    });
+                } catch (verificationError) {
+                    console.error(
+                        "Error sending verification email:",
+                        verificationError
+                    );
+                    setError(
+                        "Role updated successfully, but failed to send verification email. Please check your email settings or try again later."
+                    );
+                }
+            } else {
+                if (role === "member") {
+                    navigate("/help");
+                } else {
+                    navigate("/home");
+                }
             }
         } catch (error) {
-            console.error("Error updating role:", error);
-            setError("Failed to set role. Please try again.");
+            console.error("Error in handleRoleSelection:", error);
+            setError(`Failed to set role: ${error.message}. Please try again.`);
         }
     };
 
-    if (!user && !tempUser) {
+    if (!user && !tempUser && !email) {
+        console.log(
+            "No user, tempUser, or email found. Redirecting to signup."
+        );
         return null;
     }
 

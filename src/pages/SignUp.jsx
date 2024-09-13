@@ -15,7 +15,6 @@ export const SignUp = () => {
         lastName: "",
         email: "",
         password: "",
-        accountType: "",
     });
     const [error, setError] = useState(null);
     const [passwordType, setPasswordType] = useState("password");
@@ -58,7 +57,9 @@ export const SignUp = () => {
         try {
             await signUp(info);
             setError(null);
-            navigate("/role-selection", { state: { signUpMethod: "email" } });
+            navigate("/role-selection", {
+                state: { signUpMethod: "email", email: info.email },
+            });
         } catch (error) {
             setError(error.message);
         }
@@ -71,7 +72,7 @@ export const SignUp = () => {
             const result = await signInWithGoogle();
             if (result.user) {
                 navigate("/role-selection", {
-                    state: { signUpMethod: "google" },
+                    state: { signUpMethod: "google", email: result.user.email },
                 });
             } else {
                 setError("Failed to sign in with Google. Please try again.");

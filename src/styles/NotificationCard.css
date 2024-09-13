@@ -1,0 +1,60 @@
+.notification-card {
+    background-color: #ffffff;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.notification-card:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.notification-card .notification-title {
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #1f2937;
+}
+
+.notification-card .notification-message {
+    margin-bottom: 10px;
+    color: #374151;
+}
+
+.notification-card .notification-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+.notification-card .notification-actions button {
+    padding: 6px 12px;
+    margin-left: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+}
+
+.notification-card .approve-button {
+    background-color: #10b981;
+    color: white;
+}
+
+.notification-card .approve-button:hover {
+    background-color: #059669;
+}
+
+.notification-card .reject-button {
+    background-color: #ef4444;
+    color: white;
+}
+
+.notification-card .reject-button:hover {
+    background-color: #dc2626;
+}

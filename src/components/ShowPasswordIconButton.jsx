@@ -10,6 +10,7 @@ export const ShowPasswordIconButton = ({ passwordType, setPasswordType }) => {
 
     return (
         <button
+            type="button"
             onClick={togglePasswordVisibility}
             className="show-password-button"
         >

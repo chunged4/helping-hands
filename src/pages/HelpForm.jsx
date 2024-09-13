@@ -18,6 +18,7 @@ import "../styles/HelpForm.css";
 export const HelpForm = () => {
     const [formData, setFormData] = useState({
         location: "",
+        time: "",
         description: "",
     });
     const [showModal, setShowModal] = useState(false);
@@ -37,6 +38,7 @@ export const HelpForm = () => {
         setShowModal(true);
         setFormData({
             location: "",
+            time: "",
             description: "",
         });
     };
@@ -56,10 +58,16 @@ export const HelpForm = () => {
                     ? `${userData.firstName} ${userData.lastName}`
                     : user.displayName;
 
+            const notificationData = {
+                location: data.location,
+                time: data.time,
+                description: data.description,
+            };
+
             const notification = {
                 type: "request",
-                message: `New help request by ${userName}: \nLocation: ${data.location}\nDescription: ${data.description}`,
-                createdBy: user.uid,
+                messageData: notificationData,
+                createdBy: user.email,
                 creatorName: userName,
             };
             const notificationPromises = coordinatorSnapshot.docs.map(
@@ -95,6 +103,17 @@ export const HelpForm = () => {
                                 id="location"
                                 name="location"
                                 value={formData.location}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="time">Suggested Start Time:</label>
+                            <input
+                                type="time"
+                                id="time"
+                                name="time"
+                                value={formData.time}
                                 onChange={handleChange}
                                 required
                             />
