@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
 import { BsXCircle } from "react-icons/bs";
 import { UserAuth } from "../context/AuthContext";
 
 import "../styles/NotificationCard.css";
 
-export const NotificationCard = ({ notification }) => {
+export const NotificationCard = ({ notification, onNotificationUpdate }) => {
     const { user, onApprove, onReject } = UserAuth();
+    const [isProcessing, setIsProcessing] = useState(false);
 
     const getNotificationTitle = () => {
         switch (notification.type) {
@@ -16,6 +17,8 @@ export const NotificationCard = ({ notification }) => {
                 return `Message from: ${notification.creatorName}`;
             case "request":
                 return `New Help Request from: ${notification.creatorName}`;
+            // case "reminder":
+            //     return `Reminder for upcoming service: }`;
             case "request_approved":
                 return `Request Approved by: ${notification.creatorName}`;
             case "request_rejected":
@@ -41,25 +44,23 @@ export const NotificationCard = ({ notification }) => {
     };
 
     const handleApprove = async () => {
-        try {
-            console.log("Approving notification:", notification);
-            console.log("Notification ID:", notification.id);
-            await onApprove(notification.id);
-            console.log("Notification approved successfully");
-        } catch (error) {
-            console.error("Error approving notification:", error);
+        if (notification.type !== "request") return;
+        setIsProcessing(true);
+        const result = await onApprove(notification.id);
+        if (result.success) {
+            onNotificationUpdate(notification.id);
         }
+        setIsProcessing(false);
     };
 
     const handleReject = async () => {
-        try {
-            console.log("Rejecting notification:", notification);
-            console.log("Notification ID:", notification.id);
-            await onReject(notification.id);
-            console.log("Notification rejected successfully");
-        } catch (error) {
-            console.error("Error rejecting notification:", error);
+        if (notification.type !== "request") return;
+        setIsProcessing(true);
+        const result = await onReject(notification.id);
+        if (result.success) {
+            onNotificationUpdate(notification.id);
         }
+        setIsProcessing(false);
     };
 
     return (
@@ -68,10 +69,18 @@ export const NotificationCard = ({ notification }) => {
             <p className="notification-message">{renderMessage()}</p>
             {user.role === "coordinator" && notification.type === "request" && (
                 <div className="notification-actions">
-                    <button onClick={handleApprove} className="approve-button">
+                    <button
+                        onClick={handleApprove}
+                        className="approve-button"
+                        disabled={isProcessing}
+                    >
                         <IoIosCheckmarkCircleOutline /> Approve
                     </button>
-                    <button onClick={handleReject} className="reject-button">
+                    <button
+                        onClick={handleReject}
+                        className="reject-button"
+                        disabled={isProcessing}
+                    >
                         <BsXCircle /> Reject
                     </button>
                 </div>

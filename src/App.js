@@ -17,6 +17,7 @@ import { Calendar } from "./pages/Calendar";
 import { Events } from "./pages/Events";
 import { HelpForm } from "./pages/HelpForm";
 import { RoleSelection } from "./pages/RoleSelection";
+import { CreateEvent } from "./pages/CreateEvent";
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -64,6 +65,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute allowedRoles={["member"]}>
                         <HelpForm />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/create-event"
+                element={
+                    <ProtectedRoute allowedRoles={["coordinator"]}>
+                        <CreateEvent />
                     </ProtectedRoute>
                 }
             />

@@ -75,7 +75,9 @@ export const Navbar = () => {
             </div>
             {isNotificationOpen && (
                 <div className="notification-modal">
-                    <NotificationPopUp />
+                    <NotificationPopUp
+                        onClose={() => setIsNotificationOpen(false)}
+                    />
                 </div>
             )}
         </nav>

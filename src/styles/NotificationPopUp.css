@@ -36,10 +36,9 @@
     cursor: pointer;
     color: #6b7280;
     transition: color 0.2s ease;
-}
-
-.notification-popup .close-button:hover {
-    color: #111827;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
 }
 
 .notification-popup .notification-list {
@@ -51,4 +50,11 @@
     font-size: 0.9rem;
     text-align: center;
     padding: 10px;
+}
+
+.notification-popup .close-button span {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
 }

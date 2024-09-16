@@ -30,16 +30,18 @@ import {
     getDocs,
     Timestamp,
     deleteDoc,
+    orderBy,
+    limit,
+    arrayUnion,
+    arrayRemove,
 } from "firebase/firestore";
 
 const AuthContext = createContext();
-const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 const TOKEN_EXPIRATION = 3 * 60 * 60 * 1000;
 
 export function AuthContextProvider({ children }) {
     const [user, setUser] = useState(null);
     const [tempUser, setTempUser] = useState(null);
-    const [lastActivity, setLastActivity] = useState(Date.now());
     const [isLoading, setIsLoading] = useState(true);
 
     const updateUserState = useCallback(async (currentUser) => {
@@ -99,24 +101,10 @@ export function AuthContextProvider({ children }) {
 
         const unsubscribe = onAuthStateChanged(auth, updateUserState);
 
-        const activityHandler = () => setLastActivity(Date.now());
-        ["mousemove", "keypress", "click", "scroll"].forEach((event) =>
-            window.addEventListener(event, activityHandler)
-        );
-
-        const checkInactivity = setInterval(() => {
-            if (Date.now() - lastActivity > INACTIVITY_TIMEOUT) {
-                logOut();
-            }
-        }, 60000);
         return () => {
             unsubscribe();
-            ["mousemove", "keypress", "click", "scroll"].forEach((event) => {
-                window.removeEventListener(event, activityHandler);
-            });
-            clearInterval(checkInactivity);
         };
-    }, [lastActivity, logOut, updateUserState]);
+    }, [logOut, updateUserState]);
 
     useEffect(() => {
         const deleteExpiredNotifications = async () => {
@@ -147,6 +135,7 @@ export function AuthContextProvider({ children }) {
             tempUser,
             logOut,
             isLoading,
+
             signUp: async (info) => {
                 try {
                     const methods = await fetchSignInMethodsForEmail(
@@ -176,9 +165,7 @@ export function AuthContextProvider({ children }) {
                         notifications: [],
                     };
 
-                    if (role === "coordinator") {
-                        userData.postedServices = [];
-                    } else if (role === "volunteer") {
+                    if (role === "volunteer") {
                         userData.signedUpServices = [];
                     }
 
@@ -310,27 +297,6 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
-            fetchNotifications: async () => {
-                if (!user) return [];
-                try {
-                    const q = query(
-                        collection(db, `users/${user.uid}/notifications`),
-                        where("expiresAt", ">", Timestamp.now())
-                    );
-                    const querySnapshot = await getDocs(q);
-                    return querySnapshot.docs.map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }));
-                } catch (error) {
-                    handleAuthError(
-                        error,
-                        "An error occurred while fetching notifications."
-                    );
-                    return [];
-                }
-            },
-
             updateUserRole: async (user, role) => {
                 try {
                     const userRef = doc(db, "users", user.email);
@@ -355,6 +321,32 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            fetchNotifications: async () => {
+                if (!user) return [];
+
+                try {
+                    const userNotificationsRef = collection(
+                        db,
+                        "users",
+                        user.email,
+                        "notifications"
+                    );
+                    const q = query(
+                        userNotificationsRef,
+                        orderBy("createdTimeStamp", "desc"),
+                        limit(20)
+                    );
+                    const querySnapshot = await getDocs(q);
+                    return querySnapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data(),
+                    }));
+                } catch (error) {
+                    console.error("Error fetching notifications:", error);
+                    return [];
+                }
+            },
+
             onApprove: async (notificationId) => {
                 try {
                     const notificationRef = doc(
@@ -364,8 +356,14 @@ export function AuthContextProvider({ children }) {
                     const notificationDoc = await getDoc(notificationRef);
 
                     if (!notificationDoc.exists()) {
-                        console.log("Notification not found");
-                        throw new Error("Notification document not found");
+                        console.warn(
+                            `Notification ${notificationId} not found, it may have been already processed.`
+                        );
+                        return {
+                            success: false,
+                            message:
+                                "Notification not found or already processed.",
+                        };
                     }
 
                     const notificationData = notificationDoc.data();
@@ -393,9 +391,16 @@ export function AuthContextProvider({ children }) {
                         messageData: notificationData.messageData,
                     });
                     await deleteDoc(notificationRef);
+                    return {
+                        success: true,
+                        message: "Request approved successfully.",
+                    };
                 } catch (error) {
                     console.error("Error in onApprove:", error);
-                    throw error;
+                    return {
+                        success: false,
+                        message: "Failed to approve request. Please try again.",
+                    };
                 }
             },
 
@@ -408,11 +413,17 @@ export function AuthContextProvider({ children }) {
                     const notificationDoc = await getDoc(notificationRef);
 
                     if (!notificationDoc.exists()) {
-                        throw new Error("Notification document not found");
+                        console.warn(
+                            `Notification ${notificationId} not found, it may have been already processed.`
+                        );
+                        return {
+                            success: false,
+                            message:
+                                "Notification not found or already processed.",
+                        };
                     }
 
                     const notificationData = notificationDoc.data();
-
                     const coordinatorDoc = await getDoc(
                         doc(db, "users", user.email)
                     );
@@ -438,8 +449,103 @@ export function AuthContextProvider({ children }) {
                     });
 
                     await deleteDoc(notificationRef);
+                    return {
+                        success: true,
+                        message: "Request rejected successfully.",
+                    };
                 } catch (error) {
                     console.error("Error in onReject:", error);
+                    return {
+                        success: false,
+                        message: "Failed to reject request. Please try again.",
+                    };
+                }
+            },
+
+            signUpForEvent: async (eventId) => {
+                if (!user) throw new Error("No user logged in");
+                try {
+                    const userRef = doc(db, "users", user.email);
+                    const eventRef = doc(db, "events", eventId);
+
+                    const eventDoc = await getDoc(eventRef);
+                    if (!eventDoc.exists()) {
+                        throw new Error("Event not found");
+                    }
+
+                    const eventData = eventDoc.data();
+                    if (eventData.participantList.includes(user.email)) {
+                        throw new Error(
+                            "User already signed up for this event"
+                        );
+                    }
+
+                    if (
+                        eventData.currentParticipants >=
+                        eventData.maxParticipants
+                    ) {
+                        throw new Error("Event is full");
+                    }
+
+                    await updateDoc(userRef, {
+                        signedUpServices: arrayUnion(eventId),
+                    });
+
+                    await updateDoc(eventRef, {
+                        currentParticipants: eventData.currentParticipants + 1,
+                        participantList: arrayUnion(user.email),
+                    });
+
+                    setUser((prevUser) => ({
+                        ...prevUser,
+                        signedUpServices: [
+                            ...(prevUser.signedUpServices || []),
+                            eventId,
+                        ],
+                    }));
+
+                    return true;
+                } catch (error) {
+                    console.error("Error signing up for event:", error);
+                    throw error;
+                }
+            },
+
+            unSignFromEvent: async (eventId) => {
+                if (!user) throw new Error("No user logged in");
+                try {
+                    const userRef = doc(db, "users", user.email);
+                    const eventRef = doc(db, "events", eventId);
+
+                    const eventDoc = await getDoc(eventRef);
+                    if (!eventDoc.exists()) {
+                        throw new Error("Event not found");
+                    }
+
+                    const eventData = eventDoc.data();
+                    if (!eventData.participantList.includes(user.email)) {
+                        throw new Error("User is not signed up for this event");
+                    }
+
+                    await updateDoc(userRef, {
+                        signedUpServices: arrayRemove(eventId),
+                    });
+
+                    await updateDoc(eventRef, {
+                        currentParticipants: eventData.currentParticipants - 1,
+                        participantList: arrayRemove(user.email),
+                    });
+
+                    setUser((prevUser) => ({
+                        ...prevUser,
+                        signedUpServices: prevUser.signedUpServices.filter(
+                            (id) => id !== eventId
+                        ),
+                    }));
+
+                    return true;
+                } catch (error) {
+                    console.error("Error removing from event:", error);
                     throw error;
                 }
             },
