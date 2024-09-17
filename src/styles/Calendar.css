@@ -1,0 +1,42 @@
+.calendar-container {
+    padding: 20px;
+}
+
+.calendar-title {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.calendar-wrapper {
+    height: 700px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.rbc-calendar {
+    font-family: Arial, sans-serif;
+}
+
+.rbc-header {
+    padding: 10px;
+    font-weight: bold;
+    background-color: #f0f0f0;
+}
+
+.calendar-event {
+    background-color: #3174ad;
+    border-radius: 5px;
+    opacity: 0.8;
+    color: white;
+    border: none;
+    display: block;
+    padding: 2px 5px;
+    font-size: 12px;
+}
+
+.rbc-today {
+    background-color: #e6f3ff;
+}

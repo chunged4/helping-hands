@@ -462,6 +462,41 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            scheduleReminderNotification: async (eventId, userId) => {
+                const eventRef = doc(db, "events", eventId);
+                const eventDoc = await getDoc(eventRef);
+
+                if (!eventDoc.exists()) {
+                    throw new Error("Event not found");
+                }
+
+                const eventData = eventDoc.data();
+                const reminderTime = new Date(
+                    eventData.startTime.toDate().getTime() - 24 * 60 * 60 * 1000
+                );
+                const now = new Date();
+
+                if (reminderTime > now) {
+                    const reminderNotification = {
+                        type: "reminder",
+                        message: `Reminder: You have an upcoming service "${eventData.title}" tomorrow.`,
+                        createdBy: "system",
+                        creatorName: "System",
+                        userId: userId,
+                        eventId: eventId,
+                        scheduledFor: Timestamp.fromDate(reminderTime),
+                    };
+
+                    await addDoc(
+                        collection(
+                            db,
+                            `users/${userId}/scheduledNotifications`
+                        ),
+                        reminderNotification
+                    );
+                }
+            },
+
             signUpForEvent: async (eventId) => {
                 if (!user) throw new Error("No user logged in");
                 try {
@@ -550,6 +585,71 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            getEventStatus: (event) => {
+                if (event.status === "cancelled") {
+                    return "cancelled";
+                }
+
+                const now = Timestamp.now();
+
+                if (now.toMillis() < event.startTime.toMillis()) {
+                    return "upcoming";
+                } else if (
+                    now.toMillis() >= event.startTime.toMillis() &&
+                    now.toMillis() <= event.endTime.toMillis()
+                ) {
+                    return "ongoing";
+                } else if (now.toMillis() > event.endTime.toMillis()) {
+                    return "completed";
+                }
+
+                return event.status;
+            },
+
+            updateEventStatus: async (event) => {
+                if (!user) throw new Error("No user logged in");
+                try {
+                    const now = Timestamp.now();
+                    let newStatus = event.status;
+
+                    if (event.status !== "cancelled") {
+                        if (now.toMillis() < event.startTime.toMillis()) {
+                            newStatus = "upcoming";
+                        } else if (
+                            now.toMillis() >= event.startTime.toMillis() &&
+                            now.toMillis() <= event.endTime.toMillis()
+                        ) {
+                            newStatus = "ongoing";
+                        } else if (now.toMillis() > event.endTime.toMillis()) {
+                            newStatus = "completed";
+                        }
+                    }
+
+                    if (newStatus !== event.status) {
+                        const eventRef = doc(db, "events", event.id);
+                        await updateDoc(eventRef, { status: newStatus });
+                        return { ...event, status: newStatus };
+                    }
+
+                    return event;
+                } catch (error) {
+                    console.error("Error updating event status:", error);
+                    throw error;
+                }
+            },
+
+            cancelEvent: async (eventId) => {
+                if (!user) throw new Error("No user logged in");
+                try {
+                    const eventRef = doc(db, "events", eventId);
+                    await updateDoc(eventRef, { status: "cancelled" });
+                    return true;
+                } catch (error) {
+                    console.error("Error cancelling event:", error);
+                    throw error;
+                }
+            },
+
             isEmailVerified: () => auth.currentUser?.emailVerified ?? false,
 
             clearTempUser: () => setTempUser(null),
@@ -564,6 +664,32 @@ export function AuthContextProvider({ children }) {
             updateUserState,
         ]
     );
+
+    useEffect(() => {
+        if (!user) return;
+
+        const checkScheduledNotifications = async () => {
+            const scheduledNotificationsRef = collection(
+                db,
+                `users/${user.email}/scheduledNotifications`
+            );
+            const q = query(
+                scheduledNotificationsRef,
+                where("scheduledFor", "<=", Timestamp.now())
+            );
+            const querySnapshot = await getDocs(q);
+
+            querySnapshot.forEach(async (doc) => {
+                const notification = doc.data();
+                await contextValue.addNotification(notification);
+                await deleteDoc(doc.ref);
+            });
+        };
+
+        const intervalId = setInterval(checkScheduledNotifications, 60000); // Check every minute
+
+        return () => clearInterval(intervalId);
+    }, [user, contextValue]);
 
     return (
         <AuthContext.Provider value={contextValue}>

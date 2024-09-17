@@ -17,8 +17,8 @@ export const NotificationCard = ({ notification, onNotificationUpdate }) => {
                 return `Message from: ${notification.creatorName}`;
             case "request":
                 return `New Help Request from: ${notification.creatorName}`;
-            // case "reminder":
-            //     return `Reminder for upcoming service: }`;
+            case "reminder":
+                return "Reminder for upcoming service";
             case "request_approved":
                 return `Request Approved by: ${notification.creatorName}`;
             case "request_rejected":

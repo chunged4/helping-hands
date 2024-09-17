@@ -5,12 +5,21 @@ import { UserAuth } from "../context/AuthContext";
 
 import "../styles/EventModal.css";
 
-export const EventModal = ({ event, onClose }) => {
+export const EventModal = ({ event: initialEvent, onClose }) => {
+    const [event, setEvent] = useState(initialEvent);
     const [coordinator, setCoordinator] = useState(null);
     const [participants, setParticipants] = useState([]);
     const [manualAddEmail, setManualAddEmail] = useState("");
     const [showManualAdd, setShowManualAdd] = useState(false);
-    const { user, signUpForEvent, unSignFromEvent } = UserAuth();
+    const {
+        user,
+        signUpForEvent,
+        unSignFromEvent,
+        addNotification,
+        getEventStatus,
+        updateEventStatus,
+        cancelEvent,
+    } = UserAuth();
 
     useEffect(() => {
         const fetchCoordinator = async () => {
@@ -46,9 +55,30 @@ export const EventModal = ({ event, onClose }) => {
         fetchParticipants();
     }, [event.creatorEmail, event.participantList]);
 
+    useEffect(() => {
+        const checkAndUpdateStatus = async () => {
+            const currentStatus = getEventStatus(event);
+            if (currentStatus !== event.status) {
+                const updatedEvent = await updateEventStatus(event);
+                setEvent(updatedEvent);
+            }
+        };
+
+        checkAndUpdateStatus();
+
+        // Set up an interval to check status every minute
+        const intervalId = setInterval(checkAndUpdateStatus, 60000);
+
+        // Clean up the interval when the component unmounts
+        return () => clearInterval(intervalId);
+    }, [event, getEventStatus, updateEventStatus]);
+
     if (!event) return null;
 
     const formatDate = (date) => {
+        if (!(date instanceof Date)) {
+            date = date.toDate ? date.toDate() : new Date(date);
+        }
         return date.toLocaleDateString("en-US", {
             weekday: "long",
             year: "numeric",
@@ -58,6 +88,9 @@ export const EventModal = ({ event, onClose }) => {
     };
 
     const formatTime = (date) => {
+        if (!(date instanceof Date)) {
+            date = date.toDate ? date.toDate() : new Date(date);
+        }
         return date.toLocaleTimeString("en-US", {
             hour: "numeric",
             minute: "2-digit",
@@ -65,7 +98,9 @@ export const EventModal = ({ event, onClose }) => {
     };
 
     const getSignupStatus = () => {
-        if (event.canSignUp) {
+        if (event.status === "cancelled") {
+            return "Event cancelled";
+        } else if (event.canSignUp) {
             return "Open for signup";
         } else if (event.currentParticipants >= event.maxParticipants) {
             return "Event is full";
@@ -80,17 +115,18 @@ export const EventModal = ({ event, onClose }) => {
             onClose();
         } catch (error) {
             console.error("Failed to sign up for event:", error);
-            // Handle error (e.g., show error message to user)
         }
     };
 
     const handleUnSignUp = async (email) => {
         try {
             await unSignFromEvent(event.id);
-            onClose();
+            setParticipants(participants.filter((p) => p.email !== email));
+            if (email === user.email) {
+                onClose();
+            }
         } catch (error) {
             console.error("Failed to remove from event:", error);
-            // Handle error (e.g., show error message to user)
         }
     };
 
@@ -104,6 +140,7 @@ export const EventModal = ({ event, onClose }) => {
             if (userDocSnap.exists()) {
                 const userData = userDocSnap.data();
                 if (userData.role === "volunteer") {
+                    await signUpForEvent(event.id, manualAddEmail);
                     setParticipants([
                         ...participants,
                         {
@@ -111,7 +148,6 @@ export const EventModal = ({ event, onClose }) => {
                             name: `${userData.firstName} ${userData.lastName}`,
                         },
                     ]);
-                    await signUpForEvent(event.id, manualAddEmail);
 
                     setManualAddEmail("");
                     setShowManualAdd(false);
@@ -123,6 +159,45 @@ export const EventModal = ({ event, onClose }) => {
             }
         } catch (error) {
             console.error("Error manually adding participant:", error);
+        }
+    };
+
+    const handleCancelEvent = async () => {
+        try {
+            await cancelEvent(event.id);
+
+            for (const participant of participants) {
+                await addNotification({
+                    type: "announcement",
+                    message: `The event "${
+                        event.title
+                    }" scheduled for ${formatDate(
+                        event.startTime
+                    )} at ${formatTime(event.startTime)} has been cancelled.`,
+                    createdBy: user.email,
+                    creatorName: `${user.firstName} ${user.lastName}`,
+                    userId: participant.email,
+                    messageData: {
+                        eventId: event.id,
+                        eventTitle: event.title,
+                        eventDate: formatDate(event.startTime),
+                        eventTime: formatTime(event.startTime),
+                    },
+                });
+            }
+
+            setEvent((prevEvent) => ({
+                ...prevEvent,
+                status: "cancelled",
+                canSignUp: false,
+            }));
+
+            alert(
+                "Event cancelled successfully. All participants have been notified."
+            );
+        } catch (error) {
+            console.error("Failed to cancel event:", error);
+            alert("Failed to cancel event. Please try again.");
         }
     };
 
@@ -172,6 +247,16 @@ export const EventModal = ({ event, onClose }) => {
                             {coordinator.lastName}
                         </p>
                     )}
+
+                    {user.email === event.creatorEmail &&
+                        event.status !== "cancelled" && (
+                            <button
+                                onClick={handleCancelEvent}
+                                className="cancel-event-button"
+                            >
+                                Cancel Event
+                            </button>
+                        )}
 
                     <h3>Attendees</h3>
                     <div className="attendees-table">

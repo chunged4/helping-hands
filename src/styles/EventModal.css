@@ -168,6 +168,20 @@
     padding: 5px 10px;
 }
 
+.cancel-event-button {
+    background-color: #ff4d4d;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.cancel-event-button:hover {
+    background-color: #ff3333;
+}
+
 .event-modal .modal-content::-webkit-scrollbar {
     width: 8px;
 }
