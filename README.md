@@ -111,7 +111,7 @@ Helping Hands is a web application designed to connect volunteers with community
 
 ## Acknowledgements
 
--   Special thanks to Advisor Bruce McKenzie for guidance and support throughout, as well as the extra time provided to complete the project.
+-   Special thanks to Advisor Bruce McKenzie for guidance and support, as well as the extra time provided to complete the project.
 
 ## Contact
 
