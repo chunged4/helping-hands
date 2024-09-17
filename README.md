@@ -1,70 +1,120 @@
-# Getting Started with Create React App
+# Helping Hands
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Project Overview
 
-## Available Scripts
+Helping Hands is a web application designed to connect volunteers with community service opportunities. It was developed as a senior project at California State University, Fullerton by Edison Chung.
 
-In the project directory, you can run:
+## Features
 
-### `npm start`
+-   User authentication (email/password and Google Sign-In)
+-   Role-based access control (Volunteer, Coordinator, Member)
+-   Event creation and management
+-   Volunteer sign-up system
+-   Notification system for event reminders and updates
+-   Calendar view of upcoming events
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Technologies Used
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+-   Frontend: React.js
+-   Backend: Firebase (Authentication, Firestore, Cloud Functions)
 
-### `npm test`
+## Getting Started
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Prerequisites
 
-### `npm run build`
+-   Node.js (current version 21.6.1)
+-   npm (current version 10.2.4)
+-   Firebase account
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Installation
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+1. Clone the repository
+    - git clone [https://github.com/chunged4/helping-hands.git](https://github.com/chunged4/helping-hands)
+2. Navigate to the project directory
+    - cd helping-hands
+3. Install dependencies
+    - npm install
+4. Set up your Firebase configuration
+    - Create a new project in Firebase Console
+    - Enable Authentication and Firestore
+    - Add your Firebase configuration to `src/config/firebase.config.js`
+5. npm start
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Usage
 
-### `npm run eject`
+1. Creating an Account:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+    - Navigate to the sign-up page.
+    - Choose to sign up with email/password or Google account.
+    - Select your role (Volunteer, Coordinator, or Member).
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2. For Volunteers:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+    - Browse available events on the home page or calendar view.
+    - Click on an event to view details.
+    - Use the "Sign Up" button to join an event.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+3. For Coordinators:
 
-## Learn More
+    - Create new events using the "Create Event" button.
+    - Manage existing events (edit details, cancel events, etc.).
+    - View all upcoming events.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+4. For Members:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+    - Request help for specific needs.
 
-### Code Splitting
+5. Notifications:
+    - All users receive notifications for event reminders, updates, or responses to requests.
+    - Access your notifications through the bell icon in the navigation bar.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Project Structure
 
-### Analyzing the Bundle Size
+-   `/public`: Public assets and HTML template
+-   `/src`: Source code of the application
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+    -   `/components`: Reusable React components
+        -   `EventCard.jsx`: Component for displaying event information
+        -   `EventModal.jsx`: A modal showing more event information and signup / unsignup capabilities
+        -   `Navbar.jsx`: Navigation bar
+        -   `NotificationCard.jsx`: Displays notification information
+        -   `NotificationPopUp.jsx`: Displays all the notifications a user has as a notification card
+        -   `PasswordRequirements.jsx`: Renders and checks as the user inputs their password
+        -   `ProtectedRoute.jsx`: Makes sure other roles can not access other pages
+        -   `RequirementCheckmark.jsx`: Checkmark or x
+        -   `ShowPasswordIconButton.jsx`: Icon that toggles visibility for the password
+        -   `ThankYouModal.jsx`: A modal that thanks the user
+    -   `/config`: Configuration files
+        -   `firebase.config.js`: Firebase configuration
+    -   `/context`: React context files
+        -   `AuthContext.js`: Manages authentication state and functions
+    -   `/pages`: Main page components
+        -   `Calendar.jsx`: Calendar view of events
+        -   `CreateEvent.jsx`: Form that provides info to create event
+        -   `EmailVerification.jsx`: Displays the info during email verification
+        -   `HelpForm.jsx`: Form to send for help
+        -   `Home.jsx`: Home page displaying events
+        -   `Landing.jsx`: What the user sees when not logged in
+        -   `LogIn.jsx`: Login the user
+        -   `RoleSelection.jsx`: Provides roles for the user to choose from
+        -   `SignUp.jsx`: Signs up the user
+    -   `/styles`: CSS files for styling
+    -   `/utils`: Utility functions and helpers
 
-### Making a Progressive Web App
+## Stretch Goals
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+-   Mobile Application: Develop an app version.
+-   Volunteer Certification: Implement a system to verify and display qualifications.
+-   Feedback System: Implement rating and review systems for events and volunteers.
+-   Point System: Points and badges to encourage volunteer participation.
+-   Language Support: Support for multiple languages.
 
-### Advanced Configuration
+## Acknowledgements
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+-   Special thanks to Advisor Bruce McKenzie for guidance and support throughout, as well as the extra time provided to complete the project.
 
-### Deployment
+## Contact
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Edison Chung - edchungw4@gmail.com
 
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Project Link: [https://github.com/chunged4/helping-hands](https://github.com/chunged4/helping-hands)
