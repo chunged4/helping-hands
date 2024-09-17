@@ -1,3 +1,17 @@
+/**
+ * @fileoverview This file provides a centralized way to manage user authentication
+ *               states and related functions throughout the app. There is functionality
+ *               for:
+ *
+ *  - User signup, login, and logout
+ *  - Google authentication
+ *  - Email verification
+ *  - Role-based access control
+ *  - Event participation management
+ *  - Notification handling
+ *  - Event status management
+ */
+
 import {
     createContext,
     useCallback,
@@ -124,7 +138,7 @@ export function AuthContextProvider({ children }) {
 
         const interval = setInterval(
             deleteExpiredNotifications,
-            24 * 60 * 60 * 1000
+            7 * 24 * 60 * 60 * 1000
         );
         return () => clearInterval(interval);
     }, []);
@@ -136,6 +150,14 @@ export function AuthContextProvider({ children }) {
             logOut,
             isLoading,
 
+            /**
+             * Signs up a new user with email and password.
+             * @param {Object} info - User information (email, password,
+             *                        first and last names, and role)
+             * @returns {Promise<Object>} The newly created user object.
+             * @throws {Error} If the email already exists or if an error
+             *                 occurs during signup.
+             */
             signUp: async (info) => {
                 try {
                     const methods = await fetchSignInMethodsForEmail(
@@ -179,6 +201,12 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Logs in a user with email and password.
+             * @param {Object} info - Login information (email, password)
+             * @returns {Promise<Object>} The logged in user object.
+             * @throws {Error} If there is an error during login.
+             */
             logIn: async (info) => {
                 try {
                     const userCredential = await signInWithEmailAndPassword(
@@ -196,6 +224,12 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Initiates Google SignIn process.
+             * @returns {Promise<Object>} Object containing user data and checks
+             *                            for if the user already exists.
+             * @throws {Error} If there is an error during signing in with Google.
+             */
             signInWithGoogle: async () => {
                 try {
                     const result = await signInWithPopup(auth, googleProvider);
@@ -216,6 +250,12 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Completes the registration process for a user who signed in with Google.
+             * @param {string} role - The role selected by the user
+             * @throws {Error} If there is no temporary user or if there is an error during
+             *                 the process.
+             */
             completeRegistration: async (role) => {
                 if (!tempUser) throw new Error("No temporary user found.");
                 try {
@@ -224,9 +264,6 @@ export function AuthContextProvider({ children }) {
                         lastName: tempUser.displayName.split(" ")[1] || "",
                         role: role,
                         notifications: [],
-                        ...(role === "coordinator"
-                            ? { postedServices: [] }
-                            : {}),
                         ...(role === "volunteer"
                             ? { signedUpServices: [] }
                             : {}),
@@ -242,6 +279,10 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Sends a verification email to the user.
+             * @throws {Error} If no user is signed in or an error occurs.
+             */
             sendVerificationEmail: async () => {
                 try {
                     const user = auth.currentUser;
@@ -258,6 +299,11 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Updates the user's profile information
+             * @param {Object} updates - The profile updates to apply.
+             * @throws {Error} If there is an error updating the profile.
+             */
             updateUserProfile: async (updates) => {
                 try {
                     const user = auth.currentUser;
@@ -272,6 +318,11 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Adds a new notification for the user.
+             * @param {Object} notification - The notification object to add.
+             * @throws {Error} If there is an error adding the notification.
+             */
             addNotification: async (notification) => {
                 if (!notification.userId) return;
                 try {
@@ -297,6 +348,13 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Updates a user's role.
+             * @param {Object} user - the user object to update.
+             * @param {string} role - The new role to assign.
+             * @returns {Promise<Object>} The updated user object.
+             * @throws {Error} If there is an error updating the user role.
+             */
             updateUserRole: async (user, role) => {
                 try {
                     const userRef = doc(db, "users", user.email);
@@ -321,6 +379,10 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Fetches notifications for the current user.
+             * @returns {Promise<Array>} An array of notification objects.
+             */
             fetchNotifications: async () => {
                 if (!user) return [];
 
@@ -347,6 +409,12 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Handles the approval of the help request notification.
+             * @param {string} notificationId - The ID of the notification to approve.
+             * @returns {Promise<Object>} An object indicating success or failure.
+             * @throws {Error} If there is an error that occurs during the process.
+             */
             onApprove: async (notificationId) => {
                 try {
                     const notificationRef = doc(
@@ -404,6 +472,12 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Handles the rejection of the help request notification.
+             * @param {string} notificationId - The ID of the notification to reject.
+             * @returns {Promise<Object>} An object indicating success or failure.
+             * @throws {Error} If there is an error that occurs during the process.
+             */
             onReject: async (notificationId) => {
                 try {
                     const notificationRef = doc(
@@ -462,6 +536,12 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Schedules a reminder notification for an event.
+             * @param {string} eventId - The ID of the event to set a reminder for.
+             * @param {string} userId - The ID of the user to send the reminder to.
+             * @throws {Error} If the event is not found.
+             */
             scheduleReminderNotification: async (eventId, userId) => {
                 const eventRef = doc(db, "events", eventId);
                 const eventDoc = await getDoc(eventRef);
@@ -497,6 +577,13 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Signs up a user for an event
+             * @param {string} eventId - The ID of the event to sign up for.
+             * @returns {Promise<boolean>} True if signup was successful.
+             * @throws {Error} If the user is already signed up, the event is full,
+             *                 the event is cancelled, or other errors occur.
+             */
             signUpForEvent: async (eventId) => {
                 if (!user) throw new Error("No user logged in");
                 try {
@@ -520,6 +607,10 @@ export function AuthContextProvider({ children }) {
                         eventData.maxParticipants
                     ) {
                         throw new Error("Event is full");
+                    }
+
+                    if (eventData.status === "cancelled") {
+                        throw new Error("Event is cancelled");
                     }
 
                     await updateDoc(userRef, {
@@ -546,6 +637,13 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Removes the user from an event they're signed up for.
+             * @param {string} eventId - The ID of the event to be removed from.
+             * @returns {Promise<boolean>} True if the removal was successful.
+             * @throws {Error} If the user is not signed upf ro the event or other
+             *                 errors that may occur.
+             */
             unSignFromEvent: async (eventId) => {
                 if (!user) throw new Error("No user logged in");
                 try {
@@ -585,6 +683,12 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Determines the current status of an event.
+             * @param {Object} event - The event object to check
+             * @returns {string} The status of the event (cancelled, upcoming, ongoing,
+             *                   completed)
+             */
             getEventStatus: (event) => {
                 if (event.status === "cancelled") {
                     return "cancelled";
@@ -606,6 +710,13 @@ export function AuthContextProvider({ children }) {
                 return event.status;
             },
 
+            /**
+             * Updates the status of an event.
+             * @param {Object} event - The event object to update.
+             * @returns {Promise<Object>} The updated event object.
+             * @throws {Error} If there's no logged in user or if there is an error
+             *                 updating the event.
+             */
             updateEventStatus: async (event) => {
                 if (!user) throw new Error("No user logged in");
                 try {
@@ -638,6 +749,13 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Cancels an event.
+             * @param {string} eventId - The Ud if the event to update and cancel.
+             * @returns {Promise<Object>} The updated event object.
+             * @throws {Error} If there's no logged in user or if there's an error
+             *                 cancelling the event.
+             */
             cancelEvent: async (eventId) => {
                 if (!user) throw new Error("No user logged in");
                 try {
@@ -650,6 +768,10 @@ export function AuthContextProvider({ children }) {
                 }
             },
 
+            /**
+             * Checks if the current user's email is verified.
+             * @returns {boolean} True if the email is verified, false otherwise.
+             */
             isEmailVerified: () => auth.currentUser?.emailVerified ?? false,
 
             clearTempUser: () => setTempUser(null),
@@ -686,7 +808,7 @@ export function AuthContextProvider({ children }) {
             });
         };
 
-        const intervalId = setInterval(checkScheduledNotifications, 60000); // Check every minute
+        const intervalId = setInterval(checkScheduledNotifications, 60000);
 
         return () => clearInterval(intervalId);
     }, [user, contextValue]);

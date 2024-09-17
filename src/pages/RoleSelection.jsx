@@ -1,3 +1,8 @@
+/**
+ * @fileoverview This page is one of the steps in the flow for the setup
+ *               of the user.
+ */
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { UserAuth } from "../context/AuthContext";
@@ -93,24 +98,39 @@ export const RoleSelection = () => {
                 </p>
                 {error && <div className="role-selection-error">{error}</div>}
                 <div className="role-selection-buttons">
-                    <button
-                        onClick={() => handleRoleSelection("volunteer")}
-                        className="role-button role-button-primary"
-                    >
-                        Volunteer
-                    </button>
-                    <button
-                        onClick={() => handleRoleSelection("coordinator")}
-                        className="role-button role-button-outline"
-                    >
-                        Coordinator
-                    </button>
-                    <button
-                        onClick={() => handleRoleSelection("member")}
-                        className="role-button role-button-secondary"
-                    >
-                        Member
-                    </button>
+                    <div className="role-button-container">
+                        <button
+                            onClick={() => handleRoleSelection("volunteer")}
+                            className="role-button role-button-primary"
+                        >
+                            Volunteer
+                        </button>
+                        <p className="role-description">
+                            Lend your time to help others
+                        </p>
+                    </div>
+                    <div className="role-button-container">
+                        <button
+                            onClick={() => handleRoleSelection("coordinator")}
+                            className="role-button role-button-outline"
+                        >
+                            Coordinator
+                        </button>
+                        <p className="role-description">
+                            Manage events and organize help
+                        </p>
+                    </div>
+                    <div className="role-button-container">
+                        <button
+                            onClick={() => handleRoleSelection("member")}
+                            className="role-button role-button-secondary"
+                        >
+                            Member
+                        </button>
+                        <p className="role-description">
+                            Someone in need of assistance
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

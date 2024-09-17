@@ -14,7 +14,6 @@ import { SignUp } from "./pages/SignUp";
 import { EmailVerification } from "./pages/EmailVerification";
 import { Home } from "./pages/Home";
 import { Calendar } from "./pages/Calendar";
-import { Events } from "./pages/Events";
 import { HelpForm } from "./pages/HelpForm";
 import { RoleSelection } from "./pages/RoleSelection";
 import { CreateEvent } from "./pages/CreateEvent";
@@ -49,14 +48,6 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute allowedRoles={["volunteer", "coordinator"]}>
                         <Calendar />
-                    </ProtectedRoute>
-                }
-            />
-            <Route
-                path="/events"
-                element={
-                    <ProtectedRoute allowedRoles={["volunteer", "coordinator"]}>
-                        <Events />
                     </ProtectedRoute>
                 }
             />

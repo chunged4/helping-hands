@@ -1,3 +1,9 @@
+/**
+ * @fileoverview This page is one of the steps in the user authentication flow, where
+ *               the user has to stop and wait to verify their email in order to continue
+ *               to the home page.
+ */
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../config/firebase.config";

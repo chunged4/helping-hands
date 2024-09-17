@@ -1,3 +1,8 @@
+/**
+ * @fileoverview This page shows all of the events on a calendar, imported from the
+ *               react library.
+ */
+
 import React, { useState, useEffect } from "react";
 import { Calendar as BigCalendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
@@ -14,7 +19,7 @@ const localizer = momentLocalizer(moment);
 export const Calendar = () => {
     const [events, setEvents] = useState([]);
     const [selectedEvent, setSelectedEvent] = useState(null);
-    const { user } = UserAuth();
+    const { user, getEventStatus } = UserAuth();
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -24,21 +29,26 @@ export const Calendar = () => {
                 const querySnapshot = await getDocs(q);
                 const fetchedEvents = querySnapshot.docs.map((doc) => {
                     const data = doc.data();
+                    const startTime = data.startTime
+                        ? data.startTime.toDate()
+                        : new Date();
+                    const endTime = data.endTime
+                        ? data.endTime.toDate()
+                        : new Date();
                     return {
                         id: doc.id,
                         ...data,
-                        start: data.startTime
-                            ? data.startTime.toDate()
-                            : new Date(),
-                        end: data.endTime ? data.endTime.toDate() : new Date(),
+                        start: startTime,
+                        end: endTime,
                         title: data.title || "Untitled Event",
+                        status: getEventStatus({ ...data, startTime, endTime }),
                     };
                 });
                 setEvents(fetchedEvents);
             }
         };
         fetchEvents();
-    }, [user]);
+    }, [user, getEventStatus]);
 
     const handleSelectEvent = (event) => {
         setSelectedEvent(event);
@@ -46,13 +56,6 @@ export const Calendar = () => {
 
     const handleCloseModal = () => {
         setSelectedEvent(null);
-    };
-
-    const handleSelectSlot = (slotInfo) => {
-        if (user && user.role === "coordinator") {
-            // Here you can implement logic to create a new event
-            console.log("Creating new event:", slotInfo);
-        }
     };
 
     const eventStyleGetter = (event, start, end, isSelected) => {
@@ -70,7 +73,7 @@ export const Calendar = () => {
             event.status === "cancelled" ||
             event.status === "completed"
         ) {
-            style.backgroundColor = "#888"; // Gray out the event
+            style.backgroundColor = "#888";
             style.opacity = 0.6;
         }
 
@@ -89,7 +92,6 @@ export const Calendar = () => {
                     startAccessor="start"
                     endAccessor="end"
                     onSelectEvent={handleSelectEvent}
-                    onSelectSlot={handleSelectSlot}
                     selectable={user && user.role === "coordinator"}
                     eventPropGetter={eventStyleGetter}
                     views={["month", "week", "day"]}

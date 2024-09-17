@@ -1,3 +1,11 @@
+/**
+ * @fileoverview This component is a modal that shows events in greater detail.
+ *               Interactions: A volunteer role can click on the open slots to signup,
+ *               as well as remove themselves from the event.
+ *               A coordinator can signup, cancel the event, remove users from the event,
+ *               and can manually add users with an email lookup.
+ */
+
 import React, { useState, useEffect } from "react";
 import { db } from "../config/firebase.config";
 import { doc, getDoc } from "firebase/firestore";

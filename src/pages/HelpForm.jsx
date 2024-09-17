@@ -1,3 +1,9 @@
+/**
+ * @fileoverview This page is for the user with role "member" to fill out a help
+ *               request form and on submit, a notification will be sent to all
+ *               coordinators for approval or rejection.
+ */
+
 import React, { useState } from "react";
 
 import { Navbar } from "../components/NavBar";

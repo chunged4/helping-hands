@@ -1,3 +1,7 @@
+/**
+ * @fileoverview This component is a simple card that displays information about 
+ *               an event. Able to be clicked to open a modal with greater detail.
+ */
 import React from "react";
 
 export const EventCard = ({ event, onOpenModal }) => {

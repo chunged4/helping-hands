@@ -1,3 +1,9 @@
+/**
+ * @fileoverview This component handles all the details about a notification like
+ *               the title and the message. A coordinator is the only one able to
+ *               receive help requests and is able to approve or reject the requests.
+ */
+
 import React, { useState } from "react";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
 import { BsXCircle } from "react-icons/bs";

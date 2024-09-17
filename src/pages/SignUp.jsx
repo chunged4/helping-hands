@@ -1,9 +1,14 @@
+
+/**
+ * @fileoverview This page handles the signup process of the user.
+ */
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GoogleButton from "react-google-button";
 
 import { ShowPasswordIconButton } from "../components/ShowPasswordIconButton";
-import { PasswordRequirements } from "../components/PasswordRequriements";
+import { PasswordRequirements } from "../components/PasswordRequirements";
 import { UserAuth } from "../context/AuthContext";
 import { useValidation } from "../hooks/useValidation";
 

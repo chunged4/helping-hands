@@ -1,3 +1,7 @@
+/**
+ * @fileoverview This component validates the password input of the user.
+ */
+
 import React from "react";
 import Icon from "react-icons-kit";
 import { info } from "react-icons-kit/typicons/info";

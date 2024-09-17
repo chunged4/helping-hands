@@ -1,3 +1,8 @@
+/**
+ * @fileoverview This page is for the coordinator to fill out a form in order to
+ *               post events.
+ */
+
 import React, { useState } from "react";
 import { db } from "../config/firebase.config";
 import {

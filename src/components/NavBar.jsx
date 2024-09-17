@@ -1,3 +1,8 @@
+/**
+ * @fileoverview This component handles the elements a user needs to navigate around,
+ *               toggling the notification modal, and logging out.
+ */
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserAuth } from "../context/AuthContext";

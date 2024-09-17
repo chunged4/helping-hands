@@ -1,3 +1,9 @@
+/**
+ * @fileoverview This page is the home page that shows a volunteer all
+ *               of the upcoming events and the events that they have
+ *               signed up for. The coordinator can see all of the events.
+ */
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Navbar } from "../components/NavBar.jsx";
 import { EventCard } from "../components/EventCard.jsx";
@@ -18,6 +24,12 @@ import {
 
 import "../styles/Home.css";
 
+/**
+ * Debounces a function call
+ * @param {Function} func - The function to debounce
+ * @param {number} wait - The debounce delay (milliseconds)
+ * @returns {Function} Debounced function
+ */
 const debounce = (func, wait) => {
     let timeout;
     return (...args) => {

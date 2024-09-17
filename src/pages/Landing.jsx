@@ -1,3 +1,9 @@
+/**
+ * @fileoverview This page holds all of the elements on the landing page, where
+ *               a user is able to sign up and login. The user will not be able
+ *               visit the landing page as long as they are logged in.
+ */
+
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 

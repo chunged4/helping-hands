@@ -1,3 +1,7 @@
+/**
+ * @fileoverview This page handles the login page and all of its functionality.
+ */
+
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GoogleButton from "react-google-button";

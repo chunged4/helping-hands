@@ -1,3 +1,9 @@
+/**
+ * @fileoverview This component is a pop up that is revealed when the user clicks 
+ *               on the button in the Navbar component. The pop up shows a list of 
+ *               all the user's notifications as cards.
+ */
+
 import React, { useState, useEffect, useCallback } from "react";
 import { UserAuth } from "../context/AuthContext";
 import { NotificationCard } from "./NotificationCard";
