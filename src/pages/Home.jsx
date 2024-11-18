@@ -1,9 +1,3 @@
-/**
- * @fileoverview This page is the home page that shows a volunteer all
- *               of the upcoming events and the events that they have
- *               signed up for. The coordinator can see all of the events.
- */
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Navbar } from "../components/NavBar.jsx";
 import { EventCard } from "../components/EventCard.jsx";
@@ -20,182 +14,267 @@ import {
     getDoc,
     orderBy,
     Timestamp,
+    onSnapshot,
+    updateDoc,
 } from "firebase/firestore";
 
 import "../styles/Home.css";
 
-/**
- * Debounces a function call
- * @param {Function} func - The function to debounce
- * @param {number} wait - The debounce delay (milliseconds)
- * @returns {Function} Debounced function
- */
-const debounce = (func, wait) => {
-    let timeout;
-    return (...args) => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func(...args), wait);
-    };
-};
-
-const getEventStatus = (startTime, endTime) => {
-    const now = new Date();
-    if (now < startTime) return "upcoming";
-    if (now >= startTime && now <= endTime) return "ongoing";
-    return "completed";
-};
-
-const canSignUp = (startTime) => {
-    const now = new Date();
-    const timeDiff = startTime.getTime() - now.getTime();
-    return timeDiff > 12 * 60 * 60 * 1000;
-};
-
 export const Home = () => {
     const { user } = UserAuth();
-    const [events, setEvents] = useState([]);
+    const [activeEvents, setActiveEvents] = useState([]);
+    const [pastEvents, setPastEvents] = useState([]);
+    const [cancelledEvents, setCancelledEvents] = useState([]);
     const [volunteerServices, setVolunteerServices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedEvent, setSelectedEvent] = useState(null);
 
+    const categorizeEvents = (events) => {
+        const now = new Date();
+        const active = [];
+        const past = [];
+        const cancelled = [];
+
+        events.forEach((event) => {
+            if (event.status === "cancelled") {
+                cancelled.push(event);
+            } else if (now > event.endTime) {
+                past.push(event);
+            } else {
+                active.push(event);
+            }
+        });
+
+        return { active, past, cancelled };
+    };
+
     const fetchData = useCallback(() => {
         const fetch = async () => {
-            const fetch = async () => {
-                if (user?.uid) {
-                    setLoading(true);
-                    setError(null);
-                    try {
-                        const eventsRef = collection(db, "events");
+            if (user?.uid) {
+                setLoading(true);
+                setError(null);
+                try {
+                    const eventsRef = collection(db, "events");
+                    let q;
+                    if (user.role === "coordinator") {
+                        q = query(eventsRef, orderBy("startTime", "desc"));
+                    } else if (user.role === "volunteer") {
                         const now = new Date();
                         const oneMonthFromNow = new Date(
                             now.getTime() + 30 * 24 * 60 * 60 * 1000
                         );
-
-                        let q;
-                        if (user.role === "coordinator") {
-                            q = query(
-                                eventsRef,
-                                orderBy("startTime", "asc"),
-                                limit(50)
-                            );
-                        } else if (user.role === "volunteer") {
-                            q = query(
-                                eventsRef,
-                                where(
-                                    "startTime",
-                                    "<=",
-                                    Timestamp.fromDate(oneMonthFromNow)
-                                ),
-                                orderBy("startTime", "asc"),
-                                limit(24)
-                            );
-                        }
-
-                        const eventSnapshot = await getDocs(q);
-                        const eventsList = eventSnapshot.docs
-                            .map((doc) => {
-                                const data = doc.data();
-                                const startTime = data.startTime.toDate();
-                                const endTime = data.endTime.toDate();
-                                return {
-                                    id: doc.id,
-                                    ...data,
-                                    startTime,
-                                    endTime,
-                                    status: getEventStatus(startTime, endTime),
-                                    canSignUp: canSignUp(startTime),
-                                    currentParticipants:
-                                        data.currentParticipants || 0,
-                                    participantList: data.participantList || [],
-                                };
-                            })
-                            .filter(
-                                (event) =>
-                                    event.status !== "completed" &&
-                                    event.status !== "cancelled"
-                            );
-
-                        if (user.role === "coordinator") {
-                            setEvents(eventsList);
-                        } else if (user.role === "volunteer") {
-                            const userDocRef = doc(db, "users", user.email);
-                            const userDocSnap = await getDoc(userDocRef);
-
-                            if (userDocSnap.exists()) {
-                                const userData = userDocSnap.data();
-                                const signedUpServiceIds =
-                                    userData.signedUpServices || [];
-
-                                const volunteerServicesList = eventsList.filter(
-                                    (event) =>
-                                        signedUpServiceIds.includes(event.id)
-                                );
-
-                                setVolunteerServices(volunteerServicesList);
-                                setEvents(
-                                    eventsList.filter(
-                                        (event) =>
-                                            !signedUpServiceIds.includes(
-                                                event.id
-                                            )
-                                    )
-                                );
-                            }
-                        }
-                    } catch (err) {
-                        console.error("Error fetching events:", err);
-                        setError(
-                            "Failed to fetch events. Please try again later."
+                        q = query(
+                            eventsRef,
+                            where(
+                                "startTime",
+                                "<=",
+                                Timestamp.fromDate(oneMonthFromNow)
+                            ),
+                            orderBy("startTime", "asc"),
+                            limit(24)
                         );
-                    } finally {
+                    }
+
+                    if (user.role === "coordinator") {
+                        const unsubscribe = onSnapshot(q, (snapshot) => {
+                            const eventsList = snapshot.docs.map((doc) => ({
+                                id: doc.id,
+                                ...doc.data(),
+                                startTime: doc.data().startTime.toDate(),
+                                endTime: doc.data().endTime.toDate(),
+                            }));
+                            const { active, past, cancelled } =
+                                categorizeEvents(eventsList);
+                            setActiveEvents(active);
+                            setPastEvents(past);
+                            setCancelledEvents(cancelled);
+                            setLoading(false);
+                        });
+                        return unsubscribe;
+                    } else {
+                        const eventSnapshot = await getDocs(q);
+                        const eventsList = eventSnapshot.docs.map((doc) => ({
+                            id: doc.id,
+                            ...doc.data(),
+                            startTime: doc.data().startTime.toDate(),
+                            endTime: doc.data().endTime.toDate(),
+                        }));
+
+                        const userDocRef = doc(db, "users", user.email);
+                        const userDocSnap = await getDoc(userDocRef);
+
+                        if (userDocSnap.exists()) {
+                            const userData = userDocSnap.data();
+                            const signedUpServiceIds =
+                                userData.signedUpServices || [];
+
+                            const volunteerServicesList = eventsList.filter(
+                                (event) => signedUpServiceIds.includes(event.id)
+                            );
+
+                            setVolunteerServices(volunteerServicesList);
+                            setActiveEvents(
+                                eventsList.filter(
+                                    (event) =>
+                                        !signedUpServiceIds.includes(
+                                            event.id
+                                        ) &&
+                                        event.status === "upcoming" &&
+                                        event.startTime > new Date()
+                                )
+                            );
+                        }
                         setLoading(false);
                     }
+                } catch (err) {
+                    console.error("Error fetching events:", err);
+                    setError("Failed to fetch events. Please try again later.");
+                    setLoading(false);
                 }
-            };
-
-            debounce(fetch, 300)();
+            }
         };
-
-        debounce(fetch, 300)();
+        return fetch();
     }, [user?.uid, user?.email, user?.role]);
 
     useEffect(() => {
-        fetchData();
+        const unsubscribe = fetchData();
+        return () => {
+            if (typeof unsubscribe === "function") {
+                unsubscribe();
+            }
+        };
     }, [fetchData]);
 
-    const handleOpenModal = async (event) => {
+    const handleOpenModal = (event) => {
         setSelectedEvent(event);
     };
 
     const handleCloseModal = () => {
         setSelectedEvent(null);
-        fetchData();
+        if (user.role !== "coordinator") {
+            fetchData();
+        }
+    };
+
+    const handleUpdateEvent = async (updatedEventData) => {
+        try {
+            if (!updatedEventData || !updatedEventData.id) {
+                console.error("Invalid event data:", updatedEventData);
+                return;
+            }
+
+            const eventRef = doc(db, "events", updatedEventData.id);
+            await updateDoc(eventRef, updatedEventData);
+
+            const updateEventInArray = (prevEvents) =>
+                prevEvents.map((event) =>
+                    event.id === updatedEventData.id ? updatedEventData : event
+                );
+
+            if (updatedEventData.status === "active") {
+                setActiveEvents((prevEvents) => updateEventInArray(prevEvents));
+            } else if (updatedEventData.status === "past") {
+                setPastEvents((prevEvents) => updateEventInArray(prevEvents));
+            } else if (updatedEventData.status === "cancelled") {
+                setCancelledEvents((prevEvents) =>
+                    updateEventInArray(prevEvents)
+                );
+            }
+
+            const removeEventFromArray = (prevEvents) =>
+                prevEvents.filter((event) => event.id !== updatedEventData.id);
+
+            if (updatedEventData.status !== "active") {
+                setActiveEvents((prevEvents) =>
+                    removeEventFromArray(prevEvents)
+                );
+            }
+            if (updatedEventData.status !== "past") {
+                setPastEvents((prevEvents) => removeEventFromArray(prevEvents));
+            }
+            if (updatedEventData.status !== "cancelled") {
+                setCancelledEvents((prevEvents) =>
+                    removeEventFromArray(prevEvents)
+                );
+            }
+
+            if (selectedEvent && selectedEvent.id === updatedEventData.id) {
+                setSelectedEvent(updatedEventData);
+            }
+        } catch (error) {
+            console.error("Error updating event:", error);
+            setError("Failed to update event. Please try again.");
+        }
     };
 
     const renderEvents = () => {
         if (user.role === "coordinator") {
             return (
-                <div>
-                    <h3>All Events</h3>
-                    <div className="event-grid">
-                        {events.map((event) => (
-                            <EventCard
-                                key={event.id}
-                                event={event}
-                                onOpenModal={handleOpenModal}
-                            />
-                        ))}
+                <>
+                    <div>
+                        <h3>Active Events</h3>
+                        <div className="event-grid">
+                            {activeEvents.map((event) => (
+                                <EventCard
+                                    key={event.id}
+                                    event={event}
+                                    onOpenModal={handleOpenModal}
+                                />
+                            ))}
+                        </div>
                     </div>
-                </div>
+                    <div>
+                        <h3>Past Events</h3>
+                        <div className="event-grid">
+                            {pastEvents.map((event) => (
+                                <EventCard
+                                    key={event.id}
+                                    event={event}
+                                    onOpenModal={handleOpenModal}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Cancelled Events</h3>
+                        <div className="event-grid">
+                            {cancelledEvents.map((event) => (
+                                <EventCard
+                                    key={event.id}
+                                    event={event}
+                                    onOpenModal={handleOpenModal}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </>
             );
         } else if (user.role === "volunteer") {
+            const completedServices = volunteerServices.filter(
+                (event) => event.status === "completed"
+            );
+            const upcomingSignedServices = volunteerServices.filter(
+                (event) => event.status === "upcoming"
+            );
             return (
                 <>
                     <div>
+                        <h3>Completed Services</h3>
+                        <div className="event-grid">
+                            {completedServices.map((event) => (
+                                <EventCard
+                                    key={`completed-${event.id}`}
+                                    event={event}
+                                    onOpenModal={handleOpenModal}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    <div>
                         <h3>Signed Up Services</h3>
                         <div className="event-grid">
-                            {volunteerServices.map((event) => (
+                            {upcomingSignedServices.map((event) => (
                                 <EventCard
                                     key={`signed-${event.id}`}
                                     event={event}
@@ -207,13 +286,15 @@ export const Home = () => {
                     <div>
                         <h3>Upcoming Events</h3>
                         <div className="event-grid">
-                            {events.map((event) => (
-                                <EventCard
-                                    key={`upcoming-${event.id}`}
-                                    event={event}
-                                    onOpenModal={handleOpenModal}
-                                />
-                            ))}
+                            {activeEvents
+                                .filter((event) => event.status !== "cancelled")
+                                .map((event) => (
+                                    <EventCard
+                                        key={`upcoming-${event.id}`}
+                                        event={event}
+                                        onOpenModal={handleOpenModal}
+                                    />
+                                ))}
                         </div>
                     </div>
                 </>
@@ -234,7 +315,11 @@ export const Home = () => {
                 )}
             </div>
             {selectedEvent && (
-                <EventModal event={selectedEvent} onClose={handleCloseModal} />
+                <EventModal
+                    event={selectedEvent}
+                    onClose={handleCloseModal}
+                    onUpdatedEvent={handleUpdateEvent}
+                />
             )}
         </div>
     );

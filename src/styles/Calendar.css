@@ -1,23 +1,53 @@
 .calendar-container {
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 40px);
+    position: relative;
 }
 
-.calendar-title {
-    text-align: center;
-    margin-bottom: 20px;
+.legend {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    background-color: #f8f8f8;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 10px; /* Add some space between legend and calendar */
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+    font-size: 12px;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.legend-label {
     color: #333;
 }
 
 .calendar-wrapper {
-    height: 700px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
     background: white;
-    padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
 .rbc-calendar {
+    flex-grow: 1;
     font-family: Arial, sans-serif;
+    height: 100% !important;
 }
 
 .rbc-header {
@@ -26,17 +56,24 @@
     background-color: #f0f0f0;
 }
 
-.calendar-event {
-    background-color: #3174ad;
-    border-radius: 5px;
-    opacity: 0.8;
-    color: white;
-    border: none;
-    display: block;
-    padding: 2px 5px;
+.rbc-event {
+    border: none !important;
+}
+
+.rbc-event-content {
     font-size: 12px;
 }
 
 .rbc-today {
     background-color: #e6f3ff;
+}
+
+@media (max-width: 768px) {
+    .legend {
+        flex-wrap: wrap;
+    }
+
+    .legend-item {
+        margin-bottom: 5px;
+    }
 }

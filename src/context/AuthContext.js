@@ -66,6 +66,7 @@ export function AuthContextProvider({ children }) {
             const userWithRole = {
                 ...currentUser,
                 role: userData.role || null,
+                signedUpServices: userData.signedUpServices || [],
             };
             setUser(userWithRole);
             localStorage.setItem(
@@ -142,6 +143,30 @@ export function AuthContextProvider({ children }) {
         );
         return () => clearInterval(interval);
     }, []);
+
+    useEffect(() => {
+        if (!user) return;
+
+        const updateEventStatuses = async () => {
+            const eventsRef = collection(db, "events");
+            const now = new Date();
+            const querySnapshot = await getDocs(eventsRef);
+
+            querySnapshot.forEach(async (doc) => {
+                const eventData = doc.data();
+                const eventEndTime = eventData.endTime.toDate();
+
+                if (eventData.status !== "cancelled" && eventEndTime < now) {
+                    await updateDoc(doc.ref, { status: "completed" });
+                }
+            });
+        };
+
+        updateEventStatuses();
+        const intervalId = setInterval(updateEventStatuses, 10 * 60 * 1000);
+
+        return () => clearInterval(intervalId);
+    }, [user]);
 
     const contextValue = useMemo(
         () => ({
@@ -641,129 +666,80 @@ export function AuthContextProvider({ children }) {
              * Removes the user from an event they're signed up for.
              * @param {string} eventId - The ID of the event to be removed from.
              * @returns {Promise<boolean>} True if the removal was successful.
-             * @throws {Error} If the user is not signed upf ro the event or other
+             * @throws {Error} If the user is not signed up for the event or other
              *                 errors that may occur.
              */
-            unSignFromEvent: async (eventId) => {
+            unSignFromEvent: async (eventId, participantEmail) => {
                 if (!user) throw new Error("No user logged in");
                 try {
-                    const userRef = doc(db, "users", user.email);
-                    const eventRef = doc(db, "events", eventId);
+                    const currentUser = auth.currentUser;
+                    if (!currentUser) {
+                        throw new Error("No user is currently logged in");
+                    }
 
+                    const userRef = doc(db, "users", currentUser.email);
+                    const userDoc = await getDoc(userRef);
+                    const userData = userDoc.data();
+
+                    const eventRef = doc(db, "events", eventId);
                     const eventDoc = await getDoc(eventRef);
+
                     if (!eventDoc.exists()) {
                         throw new Error("Event not found");
                     }
 
                     const eventData = eventDoc.data();
-                    if (!eventData.participantList.includes(user.email)) {
+
+                    if (
+                        !eventData.participantList ||
+                        !Array.isArray(eventData.participantList)
+                    ) {
+                        throw new Error("Event participants data is invalid");
+                    }
+
+                    const isCoordinator = userData.role === "coordinator";
+                    const isSelfRemoval =
+                        currentUser.email === participantEmail;
+
+                    if (!isCoordinator && !isSelfRemoval) {
+                        throw new Error(
+                            "Unauthorized to remove this participant"
+                        );
+                    }
+
+                    if (!eventData.participantList.includes(participantEmail)) {
                         throw new Error("User is not signed up for this event");
                     }
 
-                    await updateDoc(userRef, {
-                        signedUpServices: arrayRemove(eventId),
-                    });
+                    const updatedParticipants =
+                        eventData.participantList.filter(
+                            (email) => email !== participantEmail
+                        );
 
                     await updateDoc(eventRef, {
+                        participantList: updatedParticipants,
                         currentParticipants: eventData.currentParticipants - 1,
-                        participantList: arrayRemove(user.email),
                     });
 
-                    setUser((prevUser) => ({
-                        ...prevUser,
-                        signedUpServices: prevUser.signedUpServices.filter(
-                            (id) => id !== eventId
-                        ),
-                    }));
-
-                    return true;
-                } catch (error) {
-                    console.error("Error removing from event:", error);
-                    throw error;
-                }
-            },
-
-            /**
-             * Determines the current status of an event.
-             * @param {Object} event - The event object to check
-             * @returns {string} The status of the event (cancelled, upcoming, ongoing,
-             *                   completed)
-             */
-            getEventStatus: (event) => {
-                if (event.status === "cancelled") {
-                    return "cancelled";
-                }
-
-                const now = Timestamp.now();
-
-                if (now.toMillis() < event.startTime.toMillis()) {
-                    return "upcoming";
-                } else if (
-                    now.toMillis() >= event.startTime.toMillis() &&
-                    now.toMillis() <= event.endTime.toMillis()
-                ) {
-                    return "ongoing";
-                } else if (now.toMillis() > event.endTime.toMillis()) {
-                    return "completed";
-                }
-
-                return event.status;
-            },
-
-            /**
-             * Updates the status of an event.
-             * @param {Object} event - The event object to update.
-             * @returns {Promise<Object>} The updated event object.
-             * @throws {Error} If there's no logged in user or if there is an error
-             *                 updating the event.
-             */
-            updateEventStatus: async (event) => {
-                if (!user) throw new Error("No user logged in");
-                try {
-                    const now = Timestamp.now();
-                    let newStatus = event.status;
-
-                    if (event.status !== "cancelled") {
-                        if (now.toMillis() < event.startTime.toMillis()) {
-                            newStatus = "upcoming";
-                        } else if (
-                            now.toMillis() >= event.startTime.toMillis() &&
-                            now.toMillis() <= event.endTime.toMillis()
-                        ) {
-                            newStatus = "ongoing";
-                        } else if (now.toMillis() > event.endTime.toMillis()) {
-                            newStatus = "completed";
-                        }
+                    if (isSelfRemoval) {
+                        const participantRef = doc(
+                            db,
+                            "users",
+                            participantEmail
+                        );
+                        await updateDoc(participantRef, {
+                            signedUpServices: arrayRemove(eventId),
+                        });
                     }
 
-                    if (newStatus !== event.status) {
-                        const eventRef = doc(db, "events", event.id);
-                        await updateDoc(eventRef, { status: newStatus });
-                        return { ...event, status: newStatus };
-                    }
-
-                    return event;
+                    const updatedEventDoc = await getDoc(eventRef);
+                    return {
+                        id: eventId,
+                        ...updatedEventDoc.data(),
+                        status: eventData.status,
+                    };
                 } catch (error) {
-                    console.error("Error updating event status:", error);
-                    throw error;
-                }
-            },
-
-            /**
-             * Cancels an event.
-             * @param {string} eventId - The Ud if the event to update and cancel.
-             * @returns {Promise<Object>} The updated event object.
-             * @throws {Error} If there's no logged in user or if there's an error
-             *                 cancelling the event.
-             */
-            cancelEvent: async (eventId) => {
-                if (!user) throw new Error("No user logged in");
-                try {
-                    const eventRef = doc(db, "events", eventId);
-                    await updateDoc(eventRef, { status: "cancelled" });
-                    return true;
-                } catch (error) {
-                    console.error("Error cancelling event:", error);
+                    console.error("Error un-signing from event:", error);
                     throw error;
                 }
             },

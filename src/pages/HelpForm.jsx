@@ -5,7 +5,6 @@
  */
 
 import React, { useState } from "react";
-
 import { Navbar } from "../components/NavBar";
 import { ThankYouModal } from "../components/ThankYouModal";
 import { UserAuth } from "../context/AuthContext";
@@ -24,8 +23,10 @@ import "../styles/HelpForm.css";
 export const HelpForm = () => {
     const [formData, setFormData] = useState({
         location: "",
+        date: "",
         time: "",
         description: "",
+        urgency: "medium",
     });
     const [showModal, setShowModal] = useState(false);
     const { user, addNotification } = UserAuth();
@@ -44,8 +45,10 @@ export const HelpForm = () => {
         setShowModal(true);
         setFormData({
             location: "",
+            date: "",
             time: "",
             description: "",
+            urgency: "medium",
         });
     };
 
@@ -64,10 +67,19 @@ export const HelpForm = () => {
                     ? `${userData.firstName} ${userData.lastName}`
                     : user.displayName;
 
+            const twelveHourFormat = (time) => {
+                const [hour, minute] = time.split(":");
+                const hour12 = hour % 12 || 12;
+                const amPm = hour < 12 ? "AM" : "PM";
+                return `${hour12}:${minute} ${amPm}`;
+            };
+
             const notificationData = {
                 location: data.location,
-                time: data.time,
+                date: data.date,
+                time: twelveHourFormat(data.time),
                 description: data.description,
+                urgency: data.urgency,
             };
 
             const notification = {
@@ -91,24 +103,36 @@ export const HelpForm = () => {
     };
 
     return (
-        <div className="help-form-container">
+        <>
             <Navbar />
-            <div className="help-form-content">
-                <h1>Helping Hands, Reporting for Duty!</h1>
-                <p className="form-intro">
-                    We're here to help! Please let us know what kind of
-                    assistance you need. Whether it's a small task or a bigger
-                    challenge, we are ready to lend a hand.
-                </p>
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
+            <div className="help-form-container">
+                <div className="help-form-content">
+                    <h1>Helping Hands, Reporting for Duty!</h1>
+                    <p className="form-intro">
+                        We're here to help! Please let us know what kind of
+                        assistance you need. Whether it's a small task or a
+                        bigger challenge, we are ready to lend a hand. Please
+                        provide some information so that we may meet your needs.
+                    </p>
+                    <form onSubmit={handleSubmit}>
                         <div className="form-group">
                             <label htmlFor="location">Location:</label>
                             <input
-                                type="loc"
+                                type="text"
                                 id="location"
                                 name="location"
                                 value={formData.location}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="date">Preferred Date:</label>
+                            <input
+                                type="date"
+                                id="date"
+                                name="date"
+                                value={formData.date}
                                 onChange={handleChange}
                                 required
                             />
@@ -124,21 +148,38 @@ export const HelpForm = () => {
                                 required
                             />
                         </div>
-                        <label htmlFor="description">Description:</label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            required
-                        ></textarea>
-                    </div>
-                    <button type="submit" className="submit-button">
-                        Submit Request
-                    </button>
-                </form>
+                        <div className="form-group">
+                            <label htmlFor="description">Description:</label>
+                            <textarea
+                                id="description"
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                required
+                            ></textarea>
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="urgency">Urgency:</label>
+                            <select
+                                id="urgency"
+                                name="urgency"
+                                value={formData.urgency}
+                                onChange={handleChange}
+                            >
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                        <button type="submit" className="submit-button">
+                            Submit Request
+                        </button>
+                    </form>
+                </div>
+                {showModal && (
+                    <ThankYouModal onClose={() => setShowModal(false)} />
+                )}
             </div>
-            {showModal && <ThankYouModal onClose={() => setShowModal(false)} />}
-        </div>
+        </>
     );
 };

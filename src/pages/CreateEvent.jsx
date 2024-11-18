@@ -26,9 +26,11 @@ export const CreateEvent = () => {
         endTime: "",
         maxParticipants: 1,
         status: "upcoming",
+        signUpStatus: "",
+        skillsNeeded: "",
     });
-    const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
+    const [error, setError] = useState(null);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -43,19 +45,26 @@ export const CreateEvent = () => {
         setError(null);
         setSuccess(false);
 
-        try {
-            const startTime = new Date(formData.startTime);
-            const endTime = new Date(formData.endTime);
+        const startTime = new Date(formData.startTime);
+        const endTime = new Date(formData.endTime);
 
+        if (endTime <= startTime) {
+            setError("End time must be after start time.");
+            return;
+        }
+
+        try {
             const newEvent = {
                 ...formData,
                 createdTimeStamp: serverTimestamp(),
                 creatorEmail: user.email,
+                creatorName: `${user.firstName} ${user.lastName}`,
                 currentParticipants: 0,
                 eventID: "",
                 participantList: [],
-                startTime: Timestamp.fromDate(new Date(startTime)),
-                endTime: Timestamp.fromDate(new Date(endTime)),
+                startTime: Timestamp.fromDate(startTime),
+                endTime: Timestamp.fromDate(endTime),
+                status: "upcoming",
             };
 
             await addDoc(collection(db, "events"), newEvent);
@@ -96,6 +105,7 @@ export const CreateEvent = () => {
                             name="title"
                             value={formData.title}
                             onChange={handleChange}
+                            placeholder="Title of the event"
                             required
                         />
                     </div>
@@ -106,7 +116,21 @@ export const CreateEvent = () => {
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
+                            placeholder="Description of the event"
                             required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="skillsNeeded">
+                            Skills/Tasks Needed:
+                        </label>
+                        <textarea
+                            id="skillsNeeded"
+                            name="skillsNeeded"
+                            value={formData.skillsNeeded}
+                            onChange={handleChange}
+                            placeholder="List any specific skills or tasks volunteers should be prepared for (e.g., sweeping, carrying heavy loads)"
+                            className="skills-textarea"
                         />
                     </div>
                     <div className="form-group">
@@ -117,6 +141,7 @@ export const CreateEvent = () => {
                             name="location"
                             value={formData.location}
                             onChange={handleChange}
+                            placeholder="Location of the event"
                             required
                         />
                     </div>

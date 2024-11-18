@@ -105,7 +105,6 @@ Helping Hands is a web application designed to connect volunteers with community
 
 -   Mobile Application: Develop an app version.
 -   Volunteer Certification: Implement a system to verify and display qualifications.
--   Feedback System: Implement rating and review systems for events and volunteers.
 -   Point System: Points and badges to encourage volunteer participation.
 -   Language Support: Support for multiple languages.
 

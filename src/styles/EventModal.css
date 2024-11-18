@@ -22,56 +22,34 @@
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-.event-modal .event-title {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #333;
-    font-size: 24px;
+.event-modal button {
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-.event-modal .event-details {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
+.event-modal button:hover {
+    background-color: #45a049;
 }
 
-.event-modal .event-details p {
-    margin: 0;
-    line-height: 1.6;
+.event-modal button.disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
 }
 
-.event-modal .event-description {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-}
-
-.event-modal .event-description h3 {
-    margin-top: 0;
-    color: #444;
-}
-
-.event-modal .coordinator-info {
-    text-align: center;
-    font-size: 0.9em;
-    color: #666;
-    margin: 20px 0;
-    padding: 10px;
-    background-color: #f9f9f9;
-    border-radius: 6px;
+.event-modal button.disabled:hover {
+    background-color: #cccccc;
 }
 
 .event-modal .close-button {
     display: block;
     margin: 20px auto 0;
-    padding: 10px 20px;
     background-color: #f44336;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
 }
 
 .event-modal .close-button:hover {
@@ -89,64 +67,99 @@
     padding: 12px;
     border-bottom: 1px solid #eee;
     transition: background-color 0.2s ease;
-}
-
-.event-modal .attendee-row:last-child {
-    border-bottom: none;
-}
-
-.event-modal .attendee-row:hover {
-    background-color: #f9f9f9;
-}
-
-.event-modal .attendee-row.empty {
-    color: #999;
-    font-style: italic;
+    display: flex;
+    align-items: center;
 }
 
 .event-modal .attendee-row.available {
     background-color: #e6f7ff;
     cursor: pointer;
-    transition: background-color 0.3s ease;
 }
 
 .event-modal .attendee-row.available:hover {
     background-color: #bae7ff;
 }
 
+.event-modal .attendee-row.available.disabled {
+    background-color: #f5f5f5;
+    color: #9e9e9e;
+    cursor: not-allowed;
+}
+
+.skills-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+.skills-needed {
+    margin-top: 10px;
+    white-space: pre-line;
+}
+
+.skills-input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.participant-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+}
+
+.participant-name {
+    min-width: 150px;
+    font-weight: 500;
+}
+
+.skill-description {
+    color: #666;
+    font-size: 0.95em;
+    position: relative;
+}
+
+.skill-description::before {
+    content: "—";
+    margin-right: 8px;
+    color: #999;
+}
+
+.participant-skills {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 20px;
+}
+
 .event-modal .signup-closed-message,
 .event-modal .event-full-message {
     text-align: center;
-    color: #ff4d4f;
+    color: #757575;
     margin-top: 10px;
-    font-weight: bold;
-}
-
-.event-modal h3 {
-    margin-top: 20px;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-.event-modal .event-info strong {
-    font-weight: 600;
-    color: #555;
-}
-
-.event-modal .event-description p {
-    line-height: 1.6;
-    color: #666;
+    font-style: italic;
 }
 
 .event-modal .remove-participant {
     cursor: pointer;
-    margin-right: 10px;
+    margin-right: 15px;
     font-size: 18px;
     color: #ff4d4f;
+    display: flex;
+    align-items: center;
 }
 
-.event-modal .participant-name {
-    flex-grow: 1;
+.event-modal .remove-participant.disabled {
+    color: #bdbdbd;
+    cursor: not-allowed;
 }
 
 .event-modal .coordinator-actions {
@@ -164,22 +177,36 @@
     padding: 5px;
 }
 
-.event-modal .manual-add-form button {
-    padding: 5px 10px;
+.event-modal .manual-add-form input:disabled {
+    background-color: #f5f5f5;
+    border-color: #e0e0e0;
+    color: #9e9e9e;
+    cursor: not-allowed;
+}
+
+.event-modal .manual-signup-disabled-message {
+    color: #757575;
+    font-style: italic;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 5px;
+    text-align: center;
+    user-select: none;
 }
 
 .cancel-event-button {
     background-color: #ff4d4d;
     color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
     margin-bottom: 20px;
 }
 
 .cancel-event-button:hover {
     background-color: #ff3333;
+}
+
+.cancel-event-button.disabled {
+    background-color: #e0e0e0;
+    color: #9e9e9e;
 }
 
 .event-modal .modal-content::-webkit-scrollbar {

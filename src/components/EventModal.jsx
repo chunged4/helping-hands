@@ -8,26 +8,27 @@
 
 import React, { useState, useEffect } from "react";
 import { db } from "../config/firebase.config";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { UserAuth } from "../context/AuthContext";
+import { CancelConfirmation } from "./CancelConfirmation";
 
 import "../styles/EventModal.css";
 
-export const EventModal = ({ event: initialEvent, onClose }) => {
+export const EventModal = ({
+    event: initialEvent,
+    onClose,
+    onUpdatedEvent,
+}) => {
     const [event, setEvent] = useState(initialEvent);
     const [coordinator, setCoordinator] = useState(null);
     const [participants, setParticipants] = useState([]);
+    const [signupSkills, setSignupSkills] = useState("");
+    const [participantSkills, setParticipantSkills] = useState({});
     const [manualAddEmail, setManualAddEmail] = useState("");
     const [showManualAdd, setShowManualAdd] = useState(false);
-    const {
-        user,
-        signUpForEvent,
-        unSignFromEvent,
-        addNotification,
-        getEventStatus,
-        updateEventStatus,
-        cancelEvent,
-    } = UserAuth();
+    const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+    const { user, signUpForEvent, unSignFromEvent, addNotification } =
+        UserAuth();
 
     useEffect(() => {
         const fetchCoordinator = async () => {
@@ -59,27 +60,14 @@ export const EventModal = ({ event: initialEvent, onClose }) => {
             setParticipants(participantData);
         };
 
+        const storedSkills = JSON.parse(
+            localStorage.getItem(`event_${event.id}_skills`) || "{}"
+        );
+        setParticipantSkills(storedSkills);
+
         fetchCoordinator();
         fetchParticipants();
-    }, [event.creatorEmail, event.participantList]);
-
-    useEffect(() => {
-        const checkAndUpdateStatus = async () => {
-            const currentStatus = getEventStatus(event);
-            if (currentStatus !== event.status) {
-                const updatedEvent = await updateEventStatus(event);
-                setEvent(updatedEvent);
-            }
-        };
-
-        checkAndUpdateStatus();
-
-        // Set up an interval to check status every minute
-        const intervalId = setInterval(checkAndUpdateStatus, 60000);
-
-        // Clean up the interval when the component unmounts
-        return () => clearInterval(intervalId);
-    }, [event, getEventStatus, updateEventStatus]);
+    }, [event]);
 
     if (!event) return null;
 
@@ -106,39 +94,117 @@ export const EventModal = ({ event: initialEvent, onClose }) => {
     };
 
     const getSignupStatus = () => {
-        if (event.status === "cancelled") {
+        const now = new Date();
+        const startTime =
+            initialEvent.startTime instanceof Date
+                ? initialEvent.startTime
+                : initialEvent.startTime.toDate();
+        const twelveHoursBeforeStart = new Date(
+            startTime.getTime() - 12 * 60 * 60 * 1000
+        );
+
+        if (initialEvent.status === "cancelled") {
             return "Event cancelled";
-        } else if (event.canSignUp) {
+        } else if (
+            initialEvent.status === "upcoming" &&
+            now < twelveHoursBeforeStart
+        ) {
             return "Open for signup";
-        } else if (event.currentParticipants >= event.maxParticipants) {
+        } else if (
+            initialEvent.currentParticipants >= initialEvent.maxParticipants
+        ) {
             return "Event is full";
         } else {
             return "Signup closed";
         }
     };
 
+    const canSignUp = () => {
+        const signupStatus = getSignupStatus();
+        return (
+            signupStatus === "Open for signup" &&
+            initialEvent.currentParticipants < initialEvent.maxParticipants
+        );
+    };
+
     const handleSignUp = async () => {
+        if (!canSignUp()) {
+            alert("Sorry, sign-ups are currently closed for this event.");
+            return;
+        }
         try {
             await signUpForEvent(event.id);
+
+            const storedSkills = JSON.parse(
+                localStorage.getItem(`event_${event.id}_skills`) || "{}"
+            );
+            const updatedSkills = {
+                ...storedSkills,
+                [user.email]: signupSkills,
+            };
+            localStorage.setItem(
+                `event_${event.id}_skills`,
+                JSON.stringify(updatedSkills)
+            );
+
+            setParticipantSkills(updatedSkills);
             onClose();
         } catch (error) {
             console.error("Failed to sign up for event:", error);
         }
     };
 
-    const handleUnSignUp = async (email) => {
+    const handleUnSignUp = async (participantEmail) => {
         try {
-            await unSignFromEvent(event.id);
-            setParticipants(participants.filter((p) => p.email !== email));
-            if (email === user.email) {
-                onClose();
+            const updatedEventData = await unSignFromEvent(
+                event.id,
+                participantEmail
+            );
+
+            const storedSkills = JSON.parse(
+                localStorage.getItem(`event_${event.id}_skills`) || "{}"
+            );
+            delete storedSkills[participantEmail];
+            localStorage.setItem(
+                `event_${event.id}_skills`,
+                JSON.stringify(storedSkills)
+            );
+
+            if (updatedEventData && updatedEventData.participantList) {
+                setParticipants(
+                    updatedEventData.participantList.map((email) => ({ email }))
+                );
+                setParticipantSkills((prev) => {
+                    const newSkills = { ...prev };
+                    delete newSkills[participantEmail];
+                    return newSkills;
+                });
+            } else {
+                console.error(
+                    "Updated event data is incomplete:",
+                    updatedEventData
+                );
+                setParticipants((prevParticipants) =>
+                    prevParticipants.filter((p) => p.email !== participantEmail)
+                );
             }
+
+            if (onUpdatedEvent) {
+                onUpdatedEvent(updatedEventData);
+            }
+            onClose();
         } catch (error) {
             console.error("Failed to remove from event:", error);
         }
     };
 
+    const canCancelEvent =
+        event.status !== "completed" && event.status !== "cancelled";
+    const canManuallyAdd = canSignUp() && event.status !== "cancelled";
+
     const handleManualAdd = async () => {
+        if (!canManuallyAdd || !manualAddEmail) return;
+
         if (!manualAddEmail) return;
 
         try {
@@ -170,9 +236,23 @@ export const EventModal = ({ event: initialEvent, onClose }) => {
         }
     };
 
-    const handleCancelEvent = async () => {
+    const handleCancelClick = () => {
+        if (canCancelEvent) {
+            setShowCancelConfirmation(true);
+        }
+    };
+
+    const handleCancelConfirm = async () => {
         try {
-            await cancelEvent(event.id);
+            const eventRef = doc(db, "events", event.id);
+            await updateDoc(eventRef, { status: "cancelled" });
+
+            const updatedEvent = { ...event, status: "cancelled" };
+            setEvent(updatedEvent);
+
+            if (typeof onUpdatedEvent === "function") {
+                onUpdatedEvent(updatedEvent);
+            }
 
             for (const participant of participants) {
                 await addNotification({
@@ -194,155 +274,222 @@ export const EventModal = ({ event: initialEvent, onClose }) => {
                 });
             }
 
-            setEvent((prevEvent) => ({
-                ...prevEvent,
-                status: "cancelled",
-                canSignUp: false,
-            }));
-
+            setShowCancelConfirmation(false);
             alert(
                 "Event cancelled successfully. All participants have been notified."
             );
+            onClose();
         } catch (error) {
             console.error("Failed to cancel event:", error);
             alert("Failed to cancel event. Please try again.");
         }
     };
 
+    const handleCancelDeny = () => {
+        setShowCancelConfirmation(false);
+    };
+
     return (
-        <div className="event-modal">
-            <div className="modal-overlay" onClick={onClose}>
-                <div
-                    className="modal-content"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <h2 className="event-title">{event.title}</h2>
-                    <div className="event-details">
-                        <div className="event-info">
-                            <p>
-                                <strong>Date:</strong>{" "}
-                                {formatDate(event.startTime)}
-                            </p>
-                            <p>
-                                <strong>Time:</strong>{" "}
-                                {formatTime(event.startTime)} -{" "}
-                                {formatTime(event.endTime)}
-                            </p>
-                            <p>
-                                <strong>Location:</strong> {event.location}
-                            </p>
-                            <p>
-                                <strong>Status:</strong> {event.status}
-                            </p>
-                            <p>
-                                <strong>Signup Status:</strong>{" "}
-                                {getSignupStatus()}
-                            </p>
-                            <p>
-                                <strong>Participants:</strong>{" "}
-                                {event.currentParticipants} /{" "}
-                                {event.maxParticipants}
-                            </p>
+        <>
+            <div className="event-modal">
+                <div className="modal-overlay" onClick={onClose}>
+                    <div
+                        className="modal-content"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h2 className="event-title">{event.title}</h2>
+                        <div className="event-details">
+                            <div className="event-info">
+                                <p>
+                                    <strong>Date:</strong>{" "}
+                                    {formatDate(event.startTime)}
+                                </p>
+                                <p>
+                                    <strong>Time:</strong>{" "}
+                                    {formatTime(event.startTime)} -{" "}
+                                    {formatTime(event.endTime)}
+                                </p>
+                                <p>
+                                    <strong>Location:</strong> {event.location}
+                                </p>
+                                <p>
+                                    <strong>Status:</strong> {event.status}
+                                </p>
+                                <p>
+                                    <strong>Signup Status:</strong>{" "}
+                                    {getSignupStatus()}
+                                </p>
+                                <p>
+                                    <strong>Participants:</strong>{" "}
+                                    {event.currentParticipants} /{" "}
+                                    {event.maxParticipants}
+                                </p>
+                                {event.skillsNeeded && (
+                                    <p className="skills-needed">
+                                        <strong>
+                                            Preferred Skills Needed:
+                                        </strong>
+                                        <br />
+                                        {event.skillsNeeded}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="event-description">
+                                <p>{event.description}</p>
+                            </div>
                         </div>
-                        <div className="event-description">
-                            <p>{event.description}</p>
-                        </div>
-                    </div>
 
-                    {coordinator && (
-                        <p className="coordinator-info">
-                            Event Coordinator: {coordinator.firstName}{" "}
-                            {coordinator.lastName}
-                        </p>
-                    )}
+                        {coordinator && (
+                            <p className="coordinator-info">
+                                Event Coordinator: {coordinator.firstName}{" "}
+                                {coordinator.lastName}
+                            </p>
+                        )}
 
-                    {user.email === event.creatorEmail &&
-                        event.status !== "cancelled" && (
+                        {user.role === "coordinator" && (
                             <button
-                                onClick={handleCancelEvent}
-                                className="cancel-event-button"
+                                onClick={handleCancelClick}
+                                className={`cancel-event-button ${
+                                    !canCancelEvent ? "disabled" : ""
+                                }`}
+                                disabled={!canCancelEvent}
                             >
                                 Cancel Event
                             </button>
                         )}
 
-                    <h3>Attendees</h3>
-                    <div className="attendees-table">
-                        {participants.map((participant, index) => (
-                            <div key={index} className="attendee-row">
-                                {(user.email === event.creatorEmail ||
-                                    user.email === participant.email) && (
-                                    <span
-                                        className="remove-participant"
-                                        onClick={() =>
-                                            handleUnSignUp(participant.email)
-                                        }
-                                    >
-                                        ×
-                                    </span>
-                                )}
-                                <span className="participant-name">
-                                    {participant.name}
-                                </span>
-                            </div>
-                        ))}
-                        {event.canSignUp &&
-                            event.currentParticipants < event.maxParticipants &&
-                            !event.participantList.includes(user.email) && (
-                                <div
-                                    className="attendee-row available"
-                                    onClick={handleSignUp}
-                                >
-                                    Click here to sign up
+                        <h3>Attendees</h3>
+                        <div className="attendees-table">
+                            {participants.map((participant, index) => (
+                                <div key={index} className="attendee-row">
+                                    {(user.role === "coordinator" ||
+                                        user.email === participant.email) && (
+                                        <span
+                                            className="remove-participant"
+                                            onClick={() =>
+                                                handleUnSignUp(
+                                                    participant.email
+                                                )
+                                            }
+                                        >
+                                            ×
+                                        </span>
+                                    )}
+                                    <div className="participant-info">
+                                        <span className="participant-name">
+                                            {participant.name}
+                                        </span>
+                                        {(participant.skills ||
+                                            participantSkills[
+                                                participant.email
+                                            ]) && (
+                                            <span className="skill-description">
+                                                {participant.skills ||
+                                                    participantSkills[
+                                                        participant.email
+                                                    ]}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
-                            )}
-                    </div>
-
-                    {user.email === event.creatorEmail && (
-                        <div className="coordinator-actions">
-                            <button
-                                onClick={() => setShowManualAdd(!showManualAdd)}
-                            >
-                                {showManualAdd
-                                    ? "Cancel"
-                                    : "Manually Add Participant"}
-                            </button>
-                            {showManualAdd && (
-                                <div className="manual-add-form">
-                                    <input
-                                        type="email"
-                                        value={manualAddEmail}
+                            ))}
+                            {canSignUp() &&
+                            !event.participantList.includes(user.email) ? (
+                                <div className="signup-section">
+                                    <br></br>
+                                    <textarea
+                                        value={signupSkills}
                                         onChange={(e) =>
-                                            setManualAddEmail(e.target.value)
+                                            setSignupSkills(e.target.value)
                                         }
-                                        placeholder="Enter volunteer's email"
+                                        placeholder="What skills or experience can you contribute? (Optional, add here before signing up)"
+                                        className="skills-input"
                                     />
-                                    <button onClick={handleManualAdd}>
-                                        Add
-                                    </button>
+                                    <div
+                                        className="attendee-row available"
+                                        onClick={handleSignUp}
+                                    >
+                                        Click here to sign up
+                                    </div>
                                 </div>
+                            ) : (
+                                <p
+                                    className={
+                                        event.currentParticipants >=
+                                        event.maxParticipants
+                                            ? "event-full-message"
+                                            : "signup-closed-message"
+                                    }
+                                >
+                                    {event.currentParticipants >=
+                                    event.maxParticipants
+                                        ? "This event is full."
+                                        : "Sign-ups are currently closed for this event."}
+                                </p>
                             )}
                         </div>
-                    )}
 
-                    {!event.canSignUp &&
-                        event.currentParticipants < event.maxParticipants && (
-                            <p className="signup-closed-message">
-                                Sign-ups are currently closed for this event.
-                            </p>
+                        {user.role === "coordinator" && (
+                            <div className="coordinator-actions">
+                                <button
+                                    onClick={() =>
+                                        canManuallyAdd &&
+                                        setShowManualAdd(!showManualAdd)
+                                    }
+                                    className={
+                                        !canManuallyAdd ? "disabled" : ""
+                                    }
+                                    disabled={!canManuallyAdd}
+                                >
+                                    {showManualAdd
+                                        ? "Cancel"
+                                        : "Manually Add Participant"}
+                                </button>
+                                {showManualAdd && (
+                                    <div className="manual-add-form">
+                                        <input
+                                            type="email"
+                                            value={manualAddEmail}
+                                            onChange={(e) =>
+                                                setManualAddEmail(
+                                                    e.target.value
+                                                )
+                                            }
+                                            placeholder="Enter volunteer's email"
+                                        />
+                                        <button
+                                            onClick={handleManualAdd}
+                                            disabled={
+                                                !canManuallyAdd ||
+                                                !manualAddEmail
+                                            }
+                                            className={
+                                                !canManuallyAdd ||
+                                                !manualAddEmail
+                                                    ? "disabled"
+                                                    : ""
+                                            }
+                                        >
+                                            Add
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         )}
 
-                    {event.currentParticipants >= event.maxParticipants && (
-                        <p className="event-full-message">
-                            This event is full.
-                        </p>
-                    )}
-
-                    <button onClick={onClose} className="close-button">
-                        Close
-                    </button>
+                        <button onClick={onClose} className="close-button">
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+            {showCancelConfirmation && (
+                <CancelConfirmation
+                    isOpen={showCancelConfirmation}
+                    onConfirm={handleCancelConfirm}
+                    onDeny={handleCancelDeny}
+                />
+            )}
+        </>
     );
 };

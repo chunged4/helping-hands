@@ -1,0 +1,53 @@
+.cancel-confirmation-actions {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.cancel-confirmation-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.cancel-confirmation-actions .confirm-button {
+    background-color: #f44336;
+    color: white;
+}
+
+.cancel-confirmation-actions .confirm-button:hover {
+    background-color: #d32f2f;
+}
+
+.cancel-confirmation-actions .deny-button {
+    background-color: #4caf50;
+    color: white;
+}
+
+.cancel-confirmation-actions .deny-button:hover {
+    background-color: #45a049;
+}
+
+.cancel-confirmation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.cancel-confirmation-dialog {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    text-align: center;
+    z-index: 2001;
+}

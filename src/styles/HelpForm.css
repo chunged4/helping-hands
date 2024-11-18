@@ -2,58 +2,60 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    align-items: center;
+    padding: 1rem;
 }
 
 .help-form-content {
-    flex: 1;
+    width: 100%;
+    max-width: 500px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2rem;
 }
 
 .help-form-content h1 {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     color: #333;
+    text-align: center;
 }
 
-.help-form-content p {
-    margin-bottom: 2rem;
-    width: 25%;
+.form-intro {
+    margin-bottom: 1.5rem;
+    text-align: center;
 }
 
-form {
+.help-form-content form {
     width: 100%;
-    max-width: 500px;
     background-color: #f9f9f9;
-    padding: 2rem;
+    padding: 1.5rem;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
-label {
+.form-group label {
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     font-weight: bold;
     color: #333;
 }
 
-input,
-select,
-textarea {
+.form-group input,
+.form-group select,
+.form-group textarea {
     width: 100%;
     padding: 0.5rem;
     border: 1px solid #ccc;
     border-radius: 4px;
-    font-size: 1rem;
+    font-size: 0.9rem;
 }
 
-textarea {
-    height: 100px;
+.form-group textarea {
+    height: 80px;
     resize: vertical;
 }
 
@@ -71,4 +73,14 @@ textarea {
 
 .submit-button:hover {
     background-color: #45a049;
+}
+
+@media (max-width: 768px) {
+    .help-form-content {
+        width: 95%;
+    }
+
+    .help-form-content form {
+        padding: 1rem;
+    }
 }

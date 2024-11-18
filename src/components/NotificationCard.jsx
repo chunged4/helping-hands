@@ -40,7 +40,11 @@ export const NotificationCard = ({ notification, onNotificationUpdate }) => {
                 <>
                     Location: {notification.messageData.location}
                     <br />
+                    Suggested Date: {notification.messageData.date}
+                    <br />
                     Suggested Start Time: {notification.messageData.time}
+                    <br />
+                    Urgency: {notification.messageData.urgency}
                     <br />
                     Description: {notification.messageData.description}
                 </>
