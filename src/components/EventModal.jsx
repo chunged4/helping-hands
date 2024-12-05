@@ -24,6 +24,8 @@ export const EventModal = ({
     const [participants, setParticipants] = useState([]);
     const [signupSkills, setSignupSkills] = useState("");
     const [participantSkills, setParticipantSkills] = useState({});
+    const [assignmentInputs, setAssignmentInputs] = useState({});
+    const [assignments, setAssignments] = useState({});
     const [manualAddEmail, setManualAddEmail] = useState("");
     const [showManualAdd, setShowManualAdd] = useState(false);
     const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
@@ -64,6 +66,11 @@ export const EventModal = ({
             localStorage.getItem(`event_${event.id}_skills`) || "{}"
         );
         setParticipantSkills(storedSkills);
+
+        const storedAssignments = JSON.parse(
+            localStorage.getItem(`event_${event.id}_assignments`) || "{}"
+        );
+        setAssignments(storedAssignments);
 
         fetchCoordinator();
         fetchParticipants();
@@ -263,7 +270,7 @@ export const EventModal = ({
                         event.startTime
                     )} at ${formatTime(event.startTime)} has been cancelled.`,
                     createdBy: user.email,
-                    creatorName: `${user.firstName} ${user.lastName}`,
+                    creatorName: `${event.creatorName}`,
                     userId: participant.email,
                     messageData: {
                         eventId: event.id,
@@ -287,6 +294,35 @@ export const EventModal = ({
 
     const handleCancelDeny = () => {
         setShowCancelConfirmation(false);
+    };
+
+    const handleAssignment = (participantEmail) => {
+        try {
+            const newAssignments = {
+                ...assignments,
+                [participantEmail]: assignmentInputs[participantEmail],
+            };
+
+            const storedAssignments = JSON.parse(
+                localStorage.getItem(`event_${event.id}_assignments`) || "{}"
+            );
+            const updatedAssignments = {
+                ...storedAssignments,
+                [participantEmail]: assignmentInputs[participantEmail],
+            };
+            localStorage.setItem(
+                `event_${event.id}_assignments`,
+                JSON.stringify(updatedAssignments)
+            );
+
+            setAssignments(newAssignments);
+            setAssignmentInputs((prev) => ({
+                ...prev,
+                [participantEmail]: "",
+            }));
+        } catch (error) {
+            console.error("Failed to update assignments:", error);
+        }
     };
 
     return (
@@ -342,7 +378,8 @@ export const EventModal = ({
                         {coordinator && (
                             <p className="coordinator-info">
                                 Event Coordinator: {coordinator.firstName}{" "}
-                                {coordinator.lastName}
+                                {coordinator.lastName} (
+                                {coordinator.email || event.creatorEmail})
                             </p>
                         )}
 
@@ -379,18 +416,75 @@ export const EventModal = ({
                                         <span className="participant-name">
                                             {participant.name}
                                         </span>
-                                        {(participant.skills ||
-                                            participantSkills[
-                                                participant.email
-                                            ]) && (
-                                            <span className="skill-description">
-                                                {participant.skills ||
+                                        <span className="skill-description">
+                                            {participant.skills ||
+                                                participantSkills[
+                                                    participant.email
+                                                ]}
+                                            {assignments[participant.email] && (
+                                                <span
+                                                    style={{
+                                                        fontStyle: "italic",
+                                                    }}
+                                                >
+                                                    {participant.skills ||
                                                     participantSkills[
                                                         participant.email
-                                                    ]}
-                                            </span>
-                                        )}
+                                                    ]
+                                                        ? ` -- Assigned: ${
+                                                              assignments[
+                                                                  participant
+                                                                      .email
+                                                              ]
+                                                          }`
+                                                        : `Assigned: ${
+                                                              assignments[
+                                                                  participant
+                                                                      .email
+                                                              ]
+                                                          }`}
+                                                </span>
+                                            )}
+                                        </span>
                                     </div>
+                                    {user.role === "coordinator" && (
+                                        <div className="assignment-controls">
+                                            <input
+                                                type="text"
+                                                value={
+                                                    assignmentInputs[
+                                                        participant.email
+                                                    ] || ""
+                                                }
+                                                onChange={(e) =>
+                                                    setAssignmentInputs(
+                                                        (prev) => ({
+                                                            ...prev,
+                                                            [participant.email]:
+                                                                e.target.value,
+                                                        })
+                                                    )
+                                                }
+                                                placeholder="Assign tasks..."
+                                                className="assignment-input"
+                                            />
+                                            <button
+                                                onClick={() =>
+                                                    handleAssignment(
+                                                        participant.email
+                                                    )
+                                                }
+                                                className="assign-button"
+                                                disabled={
+                                                    !assignmentInputs[
+                                                        participant.email
+                                                    ]
+                                                }
+                                            >
+                                                Assign
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                             {canSignUp() &&

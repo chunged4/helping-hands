@@ -3,13 +3,15 @@
  *               post events.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { db } from "../config/firebase.config";
 import {
     collection,
     addDoc,
     serverTimestamp,
     Timestamp,
+    doc,
+    getDoc,
 } from "firebase/firestore";
 import { UserAuth } from "../context/AuthContext";
 import { Navbar } from "../components/NavBar";
@@ -18,6 +20,7 @@ import "../styles/CreateEvent.css";
 
 export const CreateEvent = () => {
     const { user } = UserAuth();
+    const [creatorInfo, setCreatorInfo] = useState(null);
     const [formData, setFormData] = useState({
         title: "",
         description: "",
@@ -31,6 +34,34 @@ export const CreateEvent = () => {
     });
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchCreatorInfo = async () => {
+            if (user?.email) {
+                try {
+                    const userDocRef = doc(db, "users", user.email);
+                    const userDoc = await getDoc(userDocRef);
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        setCreatorInfo({
+                            email: user.email,
+                            name:
+                                userData.firstName && userData.lastName
+                                    ? `${userData.firstName} ${userData.lastName}`
+                                    : user.displayName || "Unknown",
+                            firstName: userData.firstName || "",
+                            lastName: userData.lastName || "",
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error fetching creator info:", error);
+                    setError("Failed to fetch creator information.");
+                }
+            }
+        };
+
+        fetchCreatorInfo();
+    }, [user]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -57,8 +88,10 @@ export const CreateEvent = () => {
             const newEvent = {
                 ...formData,
                 createdTimeStamp: serverTimestamp(),
-                creatorEmail: user.email,
-                creatorName: `${user.firstName} ${user.lastName}`,
+                creatorEmail: creatorInfo.email,
+                creatorName: creatorInfo.name,
+                creatorFirstName: creatorInfo.firstName,
+                creatorLastName: creatorInfo.lastName,
                 currentParticipants: 0,
                 eventID: "",
                 participantList: [],
@@ -78,6 +111,8 @@ export const CreateEvent = () => {
                 endTime: "",
                 maxParticipants: 1,
                 status: "upcoming",
+                signUpStatus: "",
+                skillsNeeded: "",
             });
         } catch (err) {
             console.error("Error adding document: ", err);
@@ -122,7 +157,7 @@ export const CreateEvent = () => {
                     </div>
                     <div className="form-group">
                         <label htmlFor="skillsNeeded">
-                            Skills/Tasks Needed:
+                            Skills/Tasks Expected (not required):
                         </label>
                         <textarea
                             id="skillsNeeded"

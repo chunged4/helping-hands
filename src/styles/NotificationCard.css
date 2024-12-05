@@ -58,3 +58,13 @@
 .notification-card .reject-button:hover {
     background-color: #dc2626;
 }
+
+.notification-card.reminder {
+    border-left: 4px solid #4caf50;
+    background-color: #f8fff8;
+}
+
+.notification-card.confirmation {
+    border-left: 4px solid #2196f3;
+    background-color: #f0f8ff;
+}

@@ -124,14 +124,51 @@ export function AuthContextProvider({ children }) {
     useEffect(() => {
         const deleteExpiredNotifications = async () => {
             try {
-                const q = query(
-                    collection(db, "notifications"),
-                    where("expiresAt", "<=", Timestamp.now())
-                );
-                const querySnapshot = await getDocs(q);
-                await Promise.all(
-                    querySnapshot.docs.map((doc) => deleteDoc(doc.ref))
-                );
+                const twentyFourHoursAgo = new Date();
+                twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+                const usersRef = collection(db, "users");
+                const usersSnapshot = await getDocs(usersRef);
+
+                for (const userDoc of usersSnapshot.docs) {
+                    const userNotificationsRef = collection(
+                        db,
+                        `users/${userDoc.id}/notifications`
+                    );
+
+                    const regularQuery = query(
+                        userNotificationsRef,
+                        where("type", "!=", "scheduled_reminder"),
+                        where(
+                            "createdTimeStamp",
+                            "<=",
+                            Timestamp.fromDate(twentyFourHoursAgo)
+                        )
+                    );
+
+                    const regularSnapshot = await getDocs(regularQuery);
+                    const regularDeletePromises = regularSnapshot.docs.map(
+                        (doc) => deleteDoc(doc.ref)
+                    );
+                    await Promise.all(regularDeletePromises);
+
+                    const scheduledQuery = query(
+                        userNotificationsRef,
+                        where("type", "==", "scheduled_reminder"),
+                        where("delivered", "==", true),
+                        where(
+                            "scheduledFor",
+                            "<=",
+                            Timestamp.fromDate(twentyFourHoursAgo)
+                        )
+                    );
+
+                    const scheduledSnapshot = await getDocs(scheduledQuery);
+                    const scheduledDeletePromises = scheduledSnapshot.docs.map(
+                        (doc) => deleteDoc(doc.ref)
+                    );
+                    await Promise.all(scheduledDeletePromises);
+                }
             } catch (error) {
                 console.error("Error deleting expired notifications:", error);
             }
@@ -139,7 +176,7 @@ export function AuthContextProvider({ children }) {
 
         const interval = setInterval(
             deleteExpiredNotifications,
-            7 * 24 * 60 * 60 * 1000
+            60 * 60 * 1000
         );
         return () => clearInterval(interval);
     }, []);
@@ -424,10 +461,15 @@ export function AuthContextProvider({ children }) {
                         limit(20)
                     );
                     const querySnapshot = await getDocs(q);
-                    return querySnapshot.docs.map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }));
+                    return querySnapshot.docs
+                        .map((doc) => ({
+                            id: doc.id,
+                            ...doc.data(),
+                        }))
+                        .filter(
+                            (notification) =>
+                                notification.type !== "scheduled_reminder"
+                        );
                 } catch (error) {
                     console.error("Error fetching notifications:", error);
                     return [];
@@ -567,37 +609,65 @@ export function AuthContextProvider({ children }) {
              * @param {string} userId - The ID of the user to send the reminder to.
              * @throws {Error} If the event is not found.
              */
-            scheduleReminderNotification: async (eventId, userId) => {
-                const eventRef = doc(db, "events", eventId);
-                const eventDoc = await getDoc(eventRef);
+            scheduleReminderNotification: async (eventId, userEmail) => {
+                try {
+                    const eventRef = doc(db, "events", eventId);
+                    const eventDoc = await getDoc(eventRef);
 
-                if (!eventDoc.exists()) {
-                    throw new Error("Event not found");
-                }
+                    if (!eventDoc.exists()) {
+                        throw new Error("Event not found");
+                    }
 
-                const eventData = eventDoc.data();
-                const reminderTime = new Date(
-                    eventData.startTime.toDate().getTime() - 24 * 60 * 60 * 1000
-                );
-                const now = new Date();
+                    const eventData = eventDoc.data();
+                    const reminderTime = new Date(
+                        eventData.startTime.toDate().getTime() -
+                            24 * 60 * 60 * 1000
+                    );
+                    const now = new Date();
 
-                if (reminderTime > now) {
-                    const reminderNotification = {
-                        type: "reminder",
-                        message: `Reminder: You have an upcoming service "${eventData.title}" tomorrow.`,
-                        createdBy: "system",
-                        creatorName: "System",
-                        userId: userId,
-                        eventId: eventId,
-                        scheduledFor: Timestamp.fromDate(reminderTime),
-                    };
+                    if (reminderTime > now) {
+                        const eventDate = eventData.startTime
+                            .toDate()
+                            .toLocaleDateString();
+                        const eventTime = eventData.startTime
+                            .toDate()
+                            .toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                            });
 
-                    await addDoc(
-                        collection(
-                            db,
-                            `users/${userId}/scheduledNotifications`
-                        ),
-                        reminderNotification
+                        const scheduledReminder = {
+                            type: "scheduled_reminder",
+                            message: `You have an upcoming service "${eventData.title}" tomorrow.`,
+                            createdBy: "system",
+                            creatorName: "System",
+                            userId: userEmail,
+                            eventDetails: {
+                                title: eventData.title,
+                                date: eventDate,
+                                time: eventTime,
+                                location: eventData.location,
+                                description: eventData.description,
+                                eventId: eventId,
+                            },
+                            scheduledFor: Timestamp.fromDate(reminderTime),
+                            createdTimeStamp: Timestamp.now(),
+                            delivered: false,
+                        };
+
+                        await addDoc(
+                            collection(db, `users/${userEmail}/notifications`),
+                            scheduledReminder
+                        );
+                    }
+                } catch (error) {
+                    console.error(
+                        "Error scheduling reminder notifications:",
+                        error
+                    );
+                    handleAuthError(
+                        error,
+                        "An error occurred while scheduling reminders. Please try again."
                     );
                 }
             },
@@ -646,6 +716,34 @@ export function AuthContextProvider({ children }) {
                         currentParticipants: eventData.currentParticipants + 1,
                         participantList: arrayUnion(user.email),
                     });
+
+                    await contextValue.addNotification({
+                        type: "confirmation",
+                        message: `You have successfully signed up for "${eventData.title}"`,
+                        userId: user.email,
+                        createdBy: "system",
+                        creatorName: "System",
+                        eventDetails: {
+                            title: eventData.title,
+                            date: eventData.startTime
+                                .toDate()
+                                .toLocaleDateString(),
+                            time: eventData.startTime
+                                .toDate()
+                                .toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                }),
+                            location: eventData.location,
+                            description: eventData.description,
+                            eventId: eventId,
+                        },
+                    });
+
+                    await contextValue.scheduleReminderNotification(
+                        eventId,
+                        user.email
+                    );
 
                     setUser((prevUser) => ({
                         ...prevUser,
@@ -767,27 +865,68 @@ export function AuthContextProvider({ children }) {
         if (!user) return;
 
         const checkScheduledNotifications = async () => {
-            const scheduledNotificationsRef = collection(
-                db,
-                `users/${user.email}/scheduledNotifications`
-            );
-            const q = query(
-                scheduledNotificationsRef,
-                where("scheduledFor", "<=", Timestamp.now())
-            );
-            const querySnapshot = await getDocs(q);
+            try {
+                const userNotificationsRef = collection(
+                    db,
+                    `users/${user.email}/notifications`
+                );
 
-            querySnapshot.forEach(async (doc) => {
-                const notification = doc.data();
-                await contextValue.addNotification(notification);
-                await deleteDoc(doc.ref);
-            });
+                const q = query(
+                    userNotificationsRef,
+                    where("type", "==", "scheduled_reminder"),
+                    where("delivered", "==", false)
+                );
+
+                const querySnapshot = await getDocs(q);
+                const now = new Date();
+
+                for (const doc of querySnapshot.docs) {
+                    const reminderData = doc.data();
+                    const scheduledTime = reminderData.scheduledFor.toDate();
+
+                    if (scheduledTime <= now) {
+                        try {
+                            await addDoc(
+                                collection(
+                                    db,
+                                    `users/${user.email}/notifications`
+                                ),
+                                {
+                                    type: "reminder",
+                                    message: reminderData.message,
+                                    createdBy: reminderData.createdBy,
+                                    creatorName: reminderData.creatorName,
+                                    userId: reminderData.userId,
+                                    eventDetails: reminderData.eventDetails,
+                                    createdTimeStamp: Timestamp.now(),
+                                    expiresAt: Timestamp.fromDate(
+                                        new Date(
+                                            now.getTime() + 24 * 60 * 60 * 1000
+                                        )
+                                    ),
+                                }
+                            );
+
+                            await deleteDoc(doc.ref);
+                        } catch (error) {
+                            console.error(
+                                "Error creating/deleting reminder:",
+                                error
+                            );
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Error checking scheduled notifications:", error);
+            }
         };
+
+        checkScheduledNotifications();
 
         const intervalId = setInterval(checkScheduledNotifications, 60000);
 
         return () => clearInterval(intervalId);
-    }, [user, contextValue]);
+    }, [user]);
 
     return (
         <AuthContext.Provider value={contextValue}>

@@ -69,6 +69,8 @@
     transition: background-color 0.2s ease;
     display: flex;
     align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
 }
 
 .event-modal .attendee-row.available {
@@ -110,11 +112,12 @@
     min-height: 60px;
 }
 
-.participant-info {
+.event-modal .participant-info {
     display: flex;
     align-items: center;
     gap: 20px;
     flex: 1;
+    min-width: 0;
 }
 
 .participant-name {
@@ -122,10 +125,20 @@
     font-weight: 500;
 }
 
-.skill-description {
+.event-modal .skill-description {
     color: #666;
     font-size: 0.95em;
     position: relative;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.event-modal .skill-description .assigned-text {
+    font-style: italic;
+    color: #4caf50;
 }
 
 .skill-description::before {
@@ -138,6 +151,51 @@
     color: #666;
     font-size: 0.9em;
     margin-left: 20px;
+}
+
+.event-modal .assignment-controls {
+    display: flex;
+    align-items: center;
+    margin-left: 20px;
+    gap: 8px;
+    min-width: 250px;
+}
+
+.event-modal .assignment-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    min-width: 150px;
+    transition: border-color 0.2s ease;
+}
+
+.event-modal .assignment-input:focus {
+    outline: none;
+    border-color: #4caf50;
+}
+
+.event-modal .assign-button {
+    padding: 6px 12px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+    min-width: 70px;
+    transition: background-color 0.3s ease;
+}
+
+.event-modal .assign-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.event-modal .assign-button:hover:not(:disabled) {
+    background-color: #45a049;
 }
 
 .event-modal .signup-closed-message,
@@ -227,16 +285,19 @@
 }
 
 @media (max-width: 768px) {
-    .event-modal .modal-content {
-        width: 95%;
-        padding: 20px;
+    .event-modal .attendee-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
     }
 
-    .event-modal .event-title {
-        font-size: 20px;
+    .event-modal .assignment-controls {
+        margin-left: 0;
+        width: 100%;
     }
 
-    .event-modal .event-details {
-        grid-template-columns: 1fr;
+    .event-modal .skill-description {
+        white-space: normal;
+        overflow: visible;
     }
 }

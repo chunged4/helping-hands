@@ -24,7 +24,9 @@ export const NotificationCard = ({ notification, onNotificationUpdate }) => {
             case "request":
                 return `New Help Request from: ${notification.creatorName}`;
             case "reminder":
-                return "Reminder for upcoming service";
+                return "⏰ Event Reminder ⏰";
+            case "confirmation":
+                return "Confirmation Message:";
             case "request_approved":
                 return `Request Approved by: ${notification.creatorName}`;
             case "request_rejected":
@@ -48,6 +50,46 @@ export const NotificationCard = ({ notification, onNotificationUpdate }) => {
                     <br />
                     Description: {notification.messageData.description}
                 </>
+            );
+        }
+
+        if (
+            (notification.type === "reminder" ||
+                notification.type === "confirmation") &&
+            notification.eventDetails
+        ) {
+            return (
+                <div className="reminder-details">
+                    <div className="reminder-main-message">
+                        {notification.message}
+                    </div>
+                    <div className="reminder-specifics">
+                        {notification.eventDetails.title && (
+                            <div className="reminder-item">
+                                <strong>Event:</strong>{" "}
+                                {notification.eventDetails.title}
+                            </div>
+                        )}
+                        {notification.eventDetails.date && (
+                            <div className="reminder-item">
+                                <strong>Date:</strong>{" "}
+                                {notification.eventDetails.date}
+                            </div>
+                        )}
+                        {notification.eventDetails.time && (
+                            <div className="reminder-item">
+                                <strong>Time:</strong>{" "}
+                                {notification.eventDetails.time}
+                            </div>
+                        )}
+                        {notification.eventDetails.location && (
+                            <div className="reminder-item">
+                                <strong>Location:</strong>{" "}
+                                {notification.eventDetails.location}
+                            </div>
+                        )}
+                    </div>
+                </div>
             );
         }
         return notification.message;
@@ -74,7 +116,7 @@ export const NotificationCard = ({ notification, onNotificationUpdate }) => {
     };
 
     return (
-        <div className="notification-card">
+        <div className={`notification-card ${notification.type}`}>
             <h3 className="notification-title">{getNotificationTitle()}</h3>
             <p className="notification-message">{renderMessage()}</p>
             {user.role === "coordinator" && notification.type === "request" && (
