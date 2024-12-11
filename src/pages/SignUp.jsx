@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This page handles the signup process of the user.
  */

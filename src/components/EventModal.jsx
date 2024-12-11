@@ -222,6 +222,27 @@ export const EventModal = ({
                 const userData = userDocSnap.data();
                 if (userData.role === "volunteer") {
                     await signUpForEvent(event.id, manualAddEmail);
+                    await addNotification({
+                        type: "confirmation",
+                        message: `You have been added to "${event.title}" by coordinator ${user.firstName} ${user.lastName} (${user.email})`,
+                        userId: manualAddEmail,
+                        createdBy: user.email,
+                        creatorName: `${user.firstName} ${user.lastName}`,
+                        eventDetails: {
+                            title: event.title,
+                            date: event.startTime.toDate().toLocaleDateString(),
+                            time: event.startTime
+                                .toDate()
+                                .toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                }),
+                            location: event.location,
+                            description: event.description,
+                            eventId: event.id,
+                        },
+                    });
+
                     setParticipants([
                         ...participants,
                         {
@@ -268,7 +289,11 @@ export const EventModal = ({
                         event.title
                     }" scheduled for ${formatDate(
                         event.startTime
-                    )} at ${formatTime(event.startTime)} has been cancelled.`,
+                    )} at ${formatTime(
+                        event.startTime
+                    )} has been cancelled.\n\n Contact ${
+                        event.creatorEmail
+                    } if you have any questions.`,
                     createdBy: user.email,
                     creatorName: `${event.creatorName}`,
                     userId: participant.email,

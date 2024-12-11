@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Navbar } from "../components/NavBar.jsx";
 import { EventCard } from "../components/EventCard.jsx";
 import { EventModal } from "../components/EventModal.jsx";
+import { VolunteerTooltip } from "../components/VolunteerTooltip.jsx";
 import { UserAuth } from "../context/AuthContext";
 import { db } from "../config/firebase.config";
 import {
@@ -305,6 +306,7 @@ export const Home = () => {
     return (
         <div>
             <Navbar />
+            {user.role === "volunteer" && <VolunteerTooltip />}
             <div className="home-container">
                 {loading ? (
                     <p>Loading events...</p>

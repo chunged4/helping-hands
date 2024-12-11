@@ -77,7 +77,8 @@ export const LogIn = () => {
             await logIn(info);
             setError(null);
         } catch (error) {
-            setError(error.message);
+            console.error(error.message);
+            setError("Your email and password do not match.");
         } finally {
             setIsLoading(false);
         }

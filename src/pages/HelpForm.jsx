@@ -112,7 +112,7 @@ export const HelpForm = () => {
                         We're here to help! Please let us know what kind of
                         assistance you need. Whether it's a small task or a
                         bigger challenge, we are ready to lend a hand. Please
-                        provide some information so that we may meet your needs.
+                        fill out the form so that we may meet your needs.
                     </p>
                     <form onSubmit={handleSubmit}>
                         <div className="form-group">

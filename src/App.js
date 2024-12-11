@@ -17,6 +17,9 @@ import { Calendar } from "./pages/Calendar";
 import { HelpForm } from "./pages/HelpForm";
 import { RoleSelection } from "./pages/RoleSelection";
 import { CreateEvent } from "./pages/CreateEvent";
+import { Feedback } from "./pages/Feedback";
+
+import { NotificationTestPage } from "./pages/NotificationTestPage";
 
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -52,6 +55,10 @@ function AppRoutes() {
                 }
             />
             <Route
+                path="/test-notifications"
+                element={<NotificationTestPage />}
+            />
+            <Route
                 path="/help"
                 element={
                     <ProtectedRoute allowedRoles={["member"]}>
@@ -64,6 +71,14 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute allowedRoles={["coordinator"]}>
                         <CreateEvent />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/event-feedback"
+                element={
+                    <ProtectedRoute allowedRoles={["coordinator"]}>
+                        <Feedback />
                     </ProtectedRoute>
                 }
             />

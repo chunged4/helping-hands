@@ -74,16 +74,20 @@ Helping Hands is a web application designed to connect volunteers with community
 -   `/src`: Source code of the application
 
     -   `/components`: Reusable React components
+        -   `CancelConfirmation.jsx`: A failsafe modal to make sure the user wants to cancel the event
         -   `EventCard.jsx`: Component for displaying event information
         -   `EventModal.jsx`: A modal showing more event information and signup / unsignup capabilities
+        -   `FeedbackForm.jsx`: Notification type that allows the a feedback form to be filled out
         -   `Navbar.jsx`: Navigation bar
         -   `NotificationCard.jsx`: Displays notification information
         -   `NotificationPopUp.jsx`: Displays all the notifications a user has as a notification card
         -   `PasswordRequirements.jsx`: Renders and checks as the user inputs their password
         -   `ProtectedRoute.jsx`: Makes sure other roles can not access other pages
         -   `RequirementCheckmark.jsx`: Checkmark or x
+        -   `ServiceVerification.jsx`: Notification type that allows verification of services from the volunteer
         -   `ShowPasswordIconButton.jsx`: Icon that toggles visibility for the password
         -   `ThankYouModal.jsx`: A modal that thanks the user
+        -   `VolunteerTooltip.jsx`: A tooltip for the user
     -   `/config`: Configuration files
         -   `firebase.config.js`: Firebase configuration
     -   `/context`: React context files
@@ -92,6 +96,7 @@ Helping Hands is a web application designed to connect volunteers with community
         -   `Calendar.jsx`: Calendar view of events
         -   `CreateEvent.jsx`: Form that provides info to create event
         -   `EmailVerification.jsx`: Displays the info during email verification
+        -   `Feedback.jsx`: Shows the feedback form info for each event
         -   `HelpForm.jsx`: Form to send for help
         -   `Home.jsx`: Home page displaying events
         -   `Landing.jsx`: What the user sees when not logged in
@@ -103,9 +108,9 @@ Helping Hands is a web application designed to connect volunteers with community
 
 ## Stretch Goals
 
--   Mobile Application: Develop an app version.
 -   Volunteer Certification: Implement a system to verify and display qualifications.
 -   Point System: Points and badges to encourage volunteer participation.
+-   Rating System: Regulates the volunteer's overall rating based on how well they completed the service.
 -   Language Support: Support for multiple languages.
 
 ## Acknowledgements

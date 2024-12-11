@@ -68,3 +68,63 @@
     border-left: 4px solid #2196f3;
     background-color: #f0f8ff;
 }
+
+.notification-card.feedback_request_volunteer,
+.notification-card.feedback_request_member {
+    border-left: 4px solid #3b82f6;
+    background-color: #f0f7ff;
+}
+
+.notification-card.service_verification {
+    border-left: 4px solid #f59e0b;
+    background-color: #fffbeb;
+}
+
+.notification-card.verification_result {
+    border-left: 4px solid #10b981;
+    background-color: #f0fdf4;
+}
+
+.reminder-details,
+.feedback-details {
+    background-color: white;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.reminder-main-message {
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: #1f2937;
+}
+
+.reminder-specifics,
+.feedback-specifics {
+    display: grid;
+    gap: 8px;
+}
+
+.reminder-item,
+.feedback-item {
+    color: #4b5563;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 640px) {
+    .rating-buttons,
+    .boolean-buttons {
+        flex-wrap: wrap;
+    }
+
+    .rating-buttons button,
+    .boolean-buttons button {
+        min-width: 60px;
+    }
+
+    .participant-verification {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+}

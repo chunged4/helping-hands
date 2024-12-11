@@ -31,6 +31,8 @@ export const CreateEvent = () => {
         status: "upcoming",
         signUpStatus: "",
         skillsNeeded: "",
+        requestedByMember: "",
+        isRequestedEvent: false,
     });
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState(null);
@@ -98,6 +100,7 @@ export const CreateEvent = () => {
                 startTime: Timestamp.fromDate(startTime),
                 endTime: Timestamp.fromDate(endTime),
                 status: "upcoming",
+                isRequestedEvent: !!formData.requestedByMember,
             };
 
             await addDoc(collection(db, "events"), newEvent);
@@ -113,6 +116,8 @@ export const CreateEvent = () => {
                 status: "upcoming",
                 signUpStatus: "",
                 skillsNeeded: "",
+                requestedByMember: "",
+                isRequestedEvent: false,
             });
         } catch (err) {
             console.error("Error adding document: ", err);
@@ -214,6 +219,19 @@ export const CreateEvent = () => {
                             onChange={handleChange}
                             min="1"
                             required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="requestedByMember">
+                            Member Email (if requested):{" "}
+                        </label>
+                        <input
+                            type="email"
+                            id="requestedByMember"
+                            name="requestedByMember"
+                            value={formData.requestedByMember}
+                            onChange={handleChange}
+                            placeholder="Leave empty if not requested by a community member"
                         />
                     </div>
                     <button type="submit" className="submit-button">

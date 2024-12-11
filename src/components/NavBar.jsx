@@ -51,6 +51,7 @@ export const Navbar = () => {
                         {user.role === "coordinator" && (
                             <>
                                 <Link to="/create-event">Create Event</Link>
+                                <Link to="/event-feedback">Feedback</Link>
                             </>
                         )}
                         {user.role === "member" && <Link to="/help">Help</Link>}

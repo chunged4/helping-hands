@@ -8,6 +8,8 @@ import React, { useState } from "react";
 import { IoIosCheckmarkCircleOutline } from "react-icons/io";
 import { BsXCircle } from "react-icons/bs";
 import { UserAuth } from "../context/AuthContext";
+import { FeedbackForm } from "./FeedbackForm";
+import { ServiceVerification } from "./ServiceVerification";
 
 import "../styles/NotificationCard.css";
 
@@ -31,68 +33,93 @@ export const NotificationCard = ({ notification, onNotificationUpdate }) => {
                 return `Request Approved by: ${notification.creatorName}`;
             case "request_rejected":
                 return `Request Rejected by: ${notification.creatorName}`;
+            case "feedback_request_volunteer":
+                return "Volunteer Feedback Request";
+            case "feedback_request_member":
+                return "Service Feedback Request";
+            case "service_verification":
+                return "Service Verification Required";
+            case "verification_result":
+                return "Service Verification Result";
             default:
                 return `Notification from: ${notification.creatorName}`;
         }
     };
 
     const renderMessage = () => {
-        if (notification.type === "request" && notification.messageData) {
-            return (
-                <>
-                    Location: {notification.messageData.location}
-                    <br />
-                    Suggested Date: {notification.messageData.date}
-                    <br />
-                    Suggested Start Time: {notification.messageData.time}
-                    <br />
-                    Urgency: {notification.messageData.urgency}
-                    <br />
-                    Description: {notification.messageData.description}
-                </>
-            );
+        switch (notification.type) {
+            case "request":
+                return (
+                    <>
+                        Email : {notification.createdBy}
+                        <br />
+                        Location: {notification.messageData.location}
+                        <br />
+                        Suggested Date: {notification.messageData.date}
+                        <br />
+                        Suggested Start Time: {notification.messageData.time}
+                        <br />
+                        Urgency: {notification.messageData.urgency}
+                        <br />
+                        Description: {notification.messageData.description}
+                    </>
+                );
+            case "feedback_request_volunteer":
+            case "feedback_request_member":
+                return (
+                    <FeedbackForm
+                        notification={notification}
+                        onNotificationUpdate={onNotificationUpdate}
+                    />
+                );
+            case "service_verification":
+                return (
+                    <ServiceVerification
+                        notification={notification}
+                        onNotificationUpdate={onNotificationUpdate}
+                    />
+                );
+            case "reminder":
+            case "confirmation":
+                if (notification.eventDetails) {
+                    return (
+                        <div className="reminder-details">
+                            <div className="reminder-main-message">
+                                {notification.message}
+                            </div>
+                            <div className="reminder-specifics">
+                                {notification.eventDetails.title && (
+                                    <div className="reminder-item">
+                                        <strong>Event:</strong>{" "}
+                                        {notification.eventDetails.title}
+                                    </div>
+                                )}
+                                {notification.eventDetails.date && (
+                                    <div className="reminder-item">
+                                        <strong>Date:</strong>{" "}
+                                        {notification.eventDetails.date}
+                                    </div>
+                                )}
+                                {notification.eventDetails.time && (
+                                    <div className="reminder-item">
+                                        <strong>Time:</strong>{" "}
+                                        {notification.eventDetails.time}
+                                    </div>
+                                )}
+                                {notification.eventDetails.location && (
+                                    <div className="reminder-item">
+                                        <strong>Location:</strong>{" "}
+                                        {notification.eventDetails.location}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                }
+                break;
+            default:
+                return notification.message;
         }
-
-        if (
-            (notification.type === "reminder" ||
-                notification.type === "confirmation") &&
-            notification.eventDetails
-        ) {
-            return (
-                <div className="reminder-details">
-                    <div className="reminder-main-message">
-                        {notification.message}
-                    </div>
-                    <div className="reminder-specifics">
-                        {notification.eventDetails.title && (
-                            <div className="reminder-item">
-                                <strong>Event:</strong>{" "}
-                                {notification.eventDetails.title}
-                            </div>
-                        )}
-                        {notification.eventDetails.date && (
-                            <div className="reminder-item">
-                                <strong>Date:</strong>{" "}
-                                {notification.eventDetails.date}
-                            </div>
-                        )}
-                        {notification.eventDetails.time && (
-                            <div className="reminder-item">
-                                <strong>Time:</strong>{" "}
-                                {notification.eventDetails.time}
-                            </div>
-                        )}
-                        {notification.eventDetails.location && (
-                            <div className="reminder-item">
-                                <strong>Location:</strong>{" "}
-                                {notification.eventDetails.location}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        }
-        return notification.message;
     };
 
     const handleApprove = async () => {

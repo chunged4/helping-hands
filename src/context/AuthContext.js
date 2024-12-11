@@ -52,6 +52,19 @@ import {
 
 const AuthContext = createContext();
 const TOKEN_EXPIRATION = 3 * 60 * 60 * 1000;
+const NOTIFICATION_TYPES = {
+    ANNOUNCEMENT: "announcement",
+    MESSAGE: "message",
+    REQUEST: "request",
+    REMINDER: "reminder",
+    CONFIRMATION: "confirmation",
+    REQUEST_APPROVED: "request_approved",
+    REQUEST_REJECTED: "request_rejected",
+    FEEDBACK_REQUEST_VOLUNTEER: "feedback_request_volunteer",
+    FEEDBACK_REQUEST_MEMBER: "feedback_request_member",
+    SERVICE_VERIFICATION: "service_verification",
+    VERIFICATION_RESULT: "verification_result",
+};
 
 export function AuthContextProvider({ children }) {
     const [user, setUser] = useState(null);
@@ -100,6 +113,29 @@ export function AuthContextProvider({ children }) {
         }
     }, [updateUserState, handleAuthError]);
 
+    const removeScheduledReminder = async (eventId, userEmail) => {
+        try {
+            const userNotificationsRef = collection(
+                db,
+                `users/${userEmail}/notifications`
+            );
+            const q = query(
+                userNotificationsRef,
+                where("type", "==", "scheduled_reminder"),
+                where("eventDetails.eventId", "==", eventId),
+                where("delivered", "==", false)
+            );
+
+            const querySnapshot = await getDocs(q);
+            const deletePromises = querySnapshot.docs.map((doc) =>
+                deleteDoc(doc.ref)
+            );
+            await Promise.all(deletePromises);
+        } catch (error) {
+            console.error("Error removing scheduled reminder:", error);
+        }
+    };
+
     useEffect(() => {
         const checkAuthState = () => {
             const storedUser = JSON.parse(localStorage.getItem("authUser"));
@@ -124,9 +160,7 @@ export function AuthContextProvider({ children }) {
     useEffect(() => {
         const deleteExpiredNotifications = async () => {
             try {
-                const twentyFourHoursAgo = new Date();
-                twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-
+                const now = new Date();
                 const usersRef = collection(db, "users");
                 const usersSnapshot = await getDocs(usersRef);
 
@@ -136,38 +170,49 @@ export function AuthContextProvider({ children }) {
                         `users/${userDoc.id}/notifications`
                     );
 
-                    const regularQuery = query(
+                    const expiredQuery = query(
                         userNotificationsRef,
-                        where("type", "!=", "scheduled_reminder"),
-                        where(
-                            "createdTimeStamp",
-                            "<=",
-                            Timestamp.fromDate(twentyFourHoursAgo)
-                        )
+                        where("expiresAt", "<=", Timestamp.fromDate(now))
                     );
 
-                    const regularSnapshot = await getDocs(regularQuery);
-                    const regularDeletePromises = regularSnapshot.docs.map(
+                    const expiredSnapshot = await getDocs(expiredQuery);
+                    const expiredDeletePromises = expiredSnapshot.docs.map(
                         (doc) => deleteDoc(doc.ref)
                     );
-                    await Promise.all(regularDeletePromises);
 
-                    const scheduledQuery = query(
+                    const deliveredRemindersQuery = query(
                         userNotificationsRef,
                         where("type", "==", "scheduled_reminder"),
-                        where("delivered", "==", true),
-                        where(
-                            "scheduledFor",
-                            "<=",
-                            Timestamp.fromDate(twentyFourHoursAgo)
-                        )
+                        where("delivered", "==", true)
                     );
 
-                    const scheduledSnapshot = await getDocs(scheduledQuery);
-                    const scheduledDeletePromises = scheduledSnapshot.docs.map(
+                    const deliveredSnapshot = await getDocs(
+                        deliveredRemindersQuery
+                    );
+                    const deliveredDeletePromises = deliveredSnapshot.docs.map(
                         (doc) => deleteDoc(doc.ref)
                     );
-                    await Promise.all(scheduledDeletePromises);
+
+                    const undeliveredRemindersQuery = query(
+                        userNotificationsRef,
+                        where("type", "==", "scheduled_reminder"),
+                        where("delivered", "==", false),
+                        where("scheduledFor", "<=", Timestamp.fromDate(now))
+                    );
+
+                    const undeliveredSnapshot = await getDocs(
+                        undeliveredRemindersQuery
+                    );
+                    const undeliveredDeletePromises =
+                        undeliveredSnapshot.docs.map((doc) =>
+                            deleteDoc(doc.ref)
+                        );
+
+                    await Promise.all([
+                        ...expiredDeletePromises,
+                        ...deliveredDeletePromises,
+                        ...undeliveredDeletePromises,
+                    ]);
                 }
             } catch (error) {
                 console.error("Error deleting expired notifications:", error);
@@ -184,19 +229,187 @@ export function AuthContextProvider({ children }) {
     useEffect(() => {
         if (!user) return;
 
-        const updateEventStatuses = async () => {
-            const eventsRef = collection(db, "events");
-            const now = new Date();
-            const querySnapshot = await getDocs(eventsRef);
+        const handleEventCompletion = async (eventDoc) => {
+            const eventData = eventDoc.data();
+            const eventRef = doc(db, "events", eventDoc.id);
 
-            querySnapshot.forEach(async (doc) => {
-                const eventData = doc.data();
-                const eventEndTime = eventData.endTime.toDate();
+            try {
+                await updateDoc(eventRef, { status: "completed" });
 
-                if (eventData.status !== "cancelled" && eventEndTime < now) {
-                    await updateDoc(doc.ref, { status: "completed" });
+                for (const volunteerEmail of eventData.participantList) {
+                    await addDoc(
+                        collection(db, `users/${volunteerEmail}/notifications`),
+                        {
+                            type: NOTIFICATION_TYPES.ANNOUNCEMENT,
+                            message: `The service "${eventData.title}" has been completed. Thank you for your participation! A feedback form is provided below.`,
+                            createdTimeStamp: Timestamp.now(),
+                            createdBy: "system",
+                            creatorName: "System",
+                            userId: volunteerEmail,
+                            eventDetails: {
+                                title: eventData.title,
+                                date: eventData.startTime
+                                    .toDate()
+                                    .toLocaleDateString(),
+                                location: eventData.location,
+                            },
+                        }
+                    );
+
+                    await addDoc(
+                        collection(db, `users/${volunteerEmail}/notifications`),
+                        {
+                            type: NOTIFICATION_TYPES.FEEDBACK_REQUEST_VOLUNTEER,
+                            eventId: eventDoc.id,
+                            eventDetails: {
+                                title: eventData.title,
+                                date: eventData.startTime
+                                    .toDate()
+                                    .toLocaleDateString(),
+                                location: eventData.location,
+                            },
+                            feedbackForm: {
+                                questions: [
+                                    {
+                                        id: "experience",
+                                        type: "text",
+                                        question:
+                                            "How was your volunteering experience?",
+                                    },
+                                    {
+                                        id: "challenges",
+                                        type: "text",
+                                        question:
+                                            "What challenges did you face, if any?",
+                                    },
+                                    {
+                                        id: "suggestions",
+                                        type: "text",
+                                        question:
+                                            "Do you have any suggestions for improvement?",
+                                    },
+                                ],
+                            },
+                            createdTimeStamp: Timestamp.now(),
+                            createdBy: "system",
+                            creatorName: "System",
+                            userId: volunteerEmail,
+                            status: "pending",
+                        }
+                    );
                 }
-            });
+
+                if (eventData.isRequestedEvent && eventData.requestedByMember) {
+                    await addDoc(
+                        collection(
+                            db,
+                            `users/${eventData.requestedByMember}/notifications`
+                        ),
+                        {
+                            type: NOTIFICATION_TYPES.FEEDBACK_REQUEST_MEMBER,
+                            eventId: eventDoc.id,
+                            eventDetails: {
+                                title: eventData.title,
+                                date: eventData.startTime
+                                    .toDate()
+                                    .toLocaleDateString(),
+                                location: eventData.location,
+                            },
+                            feedbackForm: {
+                                questions: [
+                                    {
+                                        id: "satisfaction",
+                                        type: "boolean",
+                                        question:
+                                            "Was the service completed satisfactorily?",
+                                    },
+                                    {
+                                        id: "rating",
+                                        type: "rating",
+                                        question:
+                                            "How would you rate the service? (1-5)",
+                                        options: [1, 2, 3, 4, 5],
+                                    },
+                                    {
+                                        id: "comments",
+                                        type: "text",
+                                        question:
+                                            "Additional comments or suggestions:",
+                                    },
+                                ],
+                            },
+                            createdTimeStamp: Timestamp.now(),
+                            createdBy: "system",
+                            creatorName: "System",
+                            userId: eventData.requestedByMember,
+                            status: "pending",
+                        }
+                    );
+                }
+
+                await addDoc(
+                    collection(
+                        db,
+                        `users/${eventData.creatorEmail}/notifications`
+                    ),
+                    {
+                        type: NOTIFICATION_TYPES.SERVICE_VERIFICATION,
+                        eventId: eventDoc.id,
+                        eventDetails: {
+                            title: eventData.title,
+                            date: eventData.startTime
+                                .toDate()
+                                .toLocaleDateString(),
+                            location: eventData.location,
+                        },
+                        participantList: eventData.participantList,
+                        createdTimeStamp: Timestamp.now(),
+                        createdBy: "system",
+                        creatorName: "System",
+                        userId: eventData.creatorEmail,
+                        status: "pending",
+                    }
+                );
+            } catch (error) {
+                console.error("Error in handleEventCompletion:", error);
+                throw error;
+            }
+        };
+
+        const updateEventStatuses = async () => {
+            try {
+                const eventsRef = collection(db, "events");
+                const now = Timestamp.fromDate(new Date());
+
+                const completionQuery = query(
+                    eventsRef,
+                    where("status", "==", "ongoing"),
+                    where("endTime", "<=", now)
+                );
+
+                const completionSnapshot = await getDocs(completionQuery);
+                for (const doc of completionSnapshot.docs) {
+                    await handleEventCompletion(doc);
+                }
+
+                const startQuery = query(
+                    eventsRef,
+                    where("status", "==", "upcoming"),
+                    where("startTime", "<=", now)
+                );
+
+                const startSnapshot = await getDocs(startQuery);
+                for (const doc of startSnapshot.docs) {
+                    const eventData = doc.data();
+                    if (eventData.endTime.toDate() > now.toDate()) {
+                        await updateDoc(doc.ref, { status: "ongoing" });
+                    } else {
+                        await handleEventCompletion(doc);
+                    }
+                }
+            } catch (error) {
+                console.error("Error updating event statuses:", error);
+            }
         };
 
         updateEventStatuses();
@@ -829,6 +1042,8 @@ export function AuthContextProvider({ children }) {
                             signedUpServices: arrayRemove(eventId),
                         });
                     }
+
+                    await removeScheduledReminder(eventId, participantEmail);
 
                     const updatedEventDoc = await getDoc(eventRef);
                     return {

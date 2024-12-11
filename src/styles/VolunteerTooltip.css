@@ -1,0 +1,43 @@
+.volunteer-tooltip {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    width: 300px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    box-shadow: var(--shadow-md);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+}
+
+.volunteer-tooltip p {
+    flex-grow: 1;
+    margin: 0 var(--space-md) 0 0;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.tooltip-close-btn {
+    position: relative;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    padding: var(--space-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tooltip-close-btn:hover {
+    color: var(--text-primary);
+}
+
+.tooltip-close-btn svg {
+    width: 20px;
+    height: 20px;
+}

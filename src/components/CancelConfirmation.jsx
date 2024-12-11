@@ -1,3 +1,8 @@
+/**
+ * @fileoverview This component is a modal that asks the user to confirm the 
+ *               cancellation of an event. It is used in the EventDetails component.
+ */
+
 import React from "react";
 
 import "../styles/CancelConfirmation.css";
