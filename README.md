@@ -22,8 +22,8 @@ Helping Hands is a web application designed to connect volunteers with community
 
 ### Prerequisites
 
--   Node.js (current version 21.6.1)
--   npm (current version 10.2.4)
+-   Node.js (current version as of last commit 21.6.1)
+-   npm (current version as of last commit 10.2.4)
 -   Firebase account
 
 ### Installation
