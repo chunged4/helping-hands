@@ -36,6 +36,9 @@ export const VolunteerTooltip = () => {
             <p>
                 👋 Click on event cards to view specific details and start
                 lending a helping hand!
+                <br />
+                If you have any questions, look for a coordinator's email and
+                send them a message!
             </p>
         </div>
     );
