@@ -306,8 +306,8 @@ export const Home = () => {
     return (
         <div>
             <Navbar />
-            {user.role === "volunteer" && <VolunteerTooltip />}
             <div className="home-container">
+            {user.role === "volunteer" && <VolunteerTooltip />}
                 {loading ? (
                     <p>Loading events...</p>
                 ) : error ? (

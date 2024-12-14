@@ -31,7 +31,7 @@ export const VolunteerTooltip = () => {
                 onClick={handleDismiss}
                 aria-label="Close tooltip"
             >
-                <X size={20} />
+                <X size={15} />
             </button>
             <p>
                 👋 Click on event cards to view specific details and start
